@@ -50,7 +50,7 @@ pub struct GetNotesForTopicOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NoteTopicInfo {
+pub struct TopicNoteRecord {
     pub note_id: String,
     pub confidence: f32,
     pub is_manual: bool,
@@ -107,7 +107,7 @@ pub trait TopicRepository: Send + Sync {
         &self,
         topic_id: &str,
         options: Option<GetNotesForTopicOptions>,
-    ) -> DomainResult<Vec<NoteTopicInfo>>;
+    ) -> DomainResult<Vec<TopicNoteRecord>>;
 
     /// Assign topic to note
     async fn assign_to_note(

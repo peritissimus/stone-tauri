@@ -31,7 +31,7 @@ pub use settings_repository::{Setting, SettingsRepository};
 pub use tag_repository::{TagRepository, TagWithCount};
 pub use topic_repository::{
     FindAllWithCountsOptions, GetNotesForTopicOptions, NoteTopicAssignment,
-    NoteTopicWithDetails, NoteTopicInfo, TopicAssignmentOptions, TopicRepository, TopicWithCount,
+    NoteTopicWithDetails, TopicNoteRecord, TopicAssignmentOptions, TopicRepository, TopicWithCount,
 };
 pub use version_repository::{VersionListItem, VersionRepository};
 pub use workspace_repository::WorkspaceRepository;
@@ -40,7 +40,7 @@ pub use workspace_repository::WorkspaceRepository;
 pub use embedding_service::{
     ClassificationResult, EmbeddingResult, EmbeddingService, EmbeddingStatus, SimilarNote,
 };
-pub use event_publisher::{DomainEvent, EventHandler, EventPublisher, FileSyncOperation, TopicClassification};
+pub use event_publisher::{DomainEvent, EventHandler, EventPublisher, EventTopicClassification, FileSyncOperation};
 pub use export_service::{ExportService, HtmlOptions, HtmlTheme, PdfFormat, PdfMargin, PdfOptions};
 pub use file_storage::{FileInfo, FileStorage, FileWatchEvent};
 pub use file_watcher::FileWatcher;

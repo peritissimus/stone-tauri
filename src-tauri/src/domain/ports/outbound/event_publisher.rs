@@ -11,7 +11,7 @@ pub enum FileSyncOperation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TopicClassification {
+pub struct EventTopicClassification {
     pub topic_id: String,
     pub topic_name: String,
     pub confidence: f32,
@@ -132,7 +132,7 @@ pub enum DomainEvent {
     NoteClassified {
         timestamp: chrono::DateTime<chrono::Utc>,
         note_id: String,
-        topics: Vec<TopicClassification>,
+        topics: Vec<EventTopicClassification>,
     },
     #[serde(rename = "embedding:progress")]
     EmbeddingProgress {

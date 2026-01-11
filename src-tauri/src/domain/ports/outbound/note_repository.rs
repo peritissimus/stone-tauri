@@ -89,4 +89,12 @@ pub trait NoteRepository: Send + Sync {
 
     /// Find deleted notes (trash)
     async fn find_deleted(&self, workspace_id: Option<&str>) -> DomainResult<Vec<Note>>;
+
+    /// Search notes by title
+    async fn search_by_title(
+        &self,
+        query: &str,
+        workspace_id: Option<&str>,
+        limit: Option<i64>,
+    ) -> DomainResult<Vec<Note>>;
 }

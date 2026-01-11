@@ -1,9 +1,10 @@
 /// Stone - A note-taking app built with Tauri and Rust
 ///
 /// Architecture: Hexagonal (Ports & Adapters)
-/// Currently implementing domain layer only
+/// Implementing domain and application layers
 
 // Declare modules
+pub mod application;
 pub mod domain;
 
 // Re-export for convenience

@@ -1,3 +1,19 @@
+pub mod attachment_usecases;
 pub mod note_usecases;
+pub mod notebook_usecases;
+pub mod quick_capture_usecases;
+pub mod settings_usecases;
+pub mod tag_usecases;
+pub mod task_usecases;
+pub mod version_usecases;
+pub mod workspace_usecases;
 
+pub use attachment_usecases::AttachmentUseCasesImpl;
 pub use note_usecases::NoteUseCasesImpl;
+pub use notebook_usecases::NotebookUseCasesImpl;
+pub use quick_capture_usecases::QuickCaptureUseCasesImpl;
+pub use settings_usecases::SettingsUseCasesImpl;
+pub use tag_usecases::TagUseCasesImpl;
+pub use task_usecases::TaskUseCasesImpl;
+pub use version_usecases::VersionUseCasesImpl;
+pub use workspace_usecases::WorkspaceUseCasesImpl;

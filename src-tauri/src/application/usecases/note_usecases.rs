@@ -101,7 +101,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Write initial content to file
         let content = input.content.unwrap_or_default();
-        let markdown = self.markdown_processor.html_to_markdown(&content).await?;
+        let markdown = self.markdown_processor.html_to_markdown(&content)?;
         self.file_storage
             .write(absolute_path.to_str().unwrap(), &markdown)
             .await?;
@@ -111,9 +111,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:created", serde_json::json!({"id": note.id}))
-                .await?;
+            publisher.emit("note:created", serde_json::json!({"id": note.id}));
         }
 
         Ok(note)
@@ -136,14 +134,19 @@ impl NoteUseCases for NoteUseCasesImpl {
                 .map(|ws| ws.id)
         };
 
+        use crate::domain::ports::outbound::NoteFindOptions;
+
         self.note_repository
-            .find_all(
-                workspace_id.as_deref(),
-                query.notebook_id.as_deref(),
-                query.is_favorite,
-                query.is_archived,
-                query.limit,
-            )
+            .find_all(NoteFindOptions {
+                workspace_id,
+                notebook_id: query.notebook_id,
+                is_favorite: query.is_favorite,
+                is_archived: query.is_archived,
+                is_deleted: Some(false),
+                is_pinned: None,
+                limit: query.limit,
+                offset: None,
+            })
             .await
     }
 
@@ -160,7 +163,7 @@ impl NoteUseCases for NoteUseCasesImpl {
         }
 
         if let Some(notebook_id) = input.notebook_id {
-            note.move_to_notebook(notebook_id);
+            note.move_to_notebook(Some(notebook_id));
         }
 
         if let Some(is_favorite) = input.is_favorite {
@@ -211,7 +214,7 @@ impl NoteUseCases for NoteUseCasesImpl {
                     })?;
 
                 let absolute_path = Path::new(&workspace.folder_path).join(file_path);
-                let body_markdown = self.markdown_processor.html_to_markdown(&content).await?;
+                let body_markdown = self.markdown_processor.html_to_markdown(&content)?;
 
                 // Prepend title heading
                 let title_heading = format!("# {}\n\n", note.title);
@@ -227,9 +230,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": note.id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": note.id}));
         }
 
         Ok(note)
@@ -248,9 +249,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:deleted", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:deleted", serde_json::json!({"id": id}));
         }
 
         Ok(())
@@ -286,9 +285,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:deleted", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:deleted", serde_json::json!({"id": id}));
         }
 
         Ok(())
@@ -307,9 +304,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": id}));
         }
 
         Ok(())
@@ -333,9 +328,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": id}));
         }
 
         Ok(note)
@@ -359,9 +352,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": id}));
         }
 
         Ok(note)
@@ -380,9 +371,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": id}));
         }
 
         Ok(())
@@ -401,9 +390,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": id}));
         }
 
         Ok(())
@@ -426,9 +413,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:updated", serde_json::json!({"id": note_id}))
-                .await?;
+            publisher.emit("note:updated", serde_json::json!({"id": note_id}));
         }
 
         Ok(())
@@ -450,7 +435,7 @@ impl NoteUseCases for NoteUseCasesImpl {
         };
 
         self.note_repository
-            .find_recent(ws_id.as_deref(), Some(limit))
+            .find_recently_updated(limit, ws_id.as_deref())
             .await
     }
 
@@ -528,7 +513,8 @@ impl NoteUseCases for NoteUseCasesImpl {
             return Ok(String::new());
         }
 
-        let markdown = self.file_storage.read(path_str).await?;
+        let markdown = self.file_storage.read(path_str).await?
+            .ok_or_else(|| DomainError::ValidationError("Failed to read note content".to_string()))?;
         let body_markdown = self.strip_first_heading(&markdown);
         let html = self.markdown_processor.markdown_to_html(&body_markdown).await?;
 
@@ -558,7 +544,7 @@ impl NoteUseCases for NoteUseCasesImpl {
             .ok_or_else(|| DomainError::ValidationError("Workspace not found".to_string()))?;
 
         let absolute_path = Path::new(&workspace.folder_path).join(&file_path);
-        let body_markdown = self.markdown_processor.html_to_markdown(content).await?;
+        let body_markdown = self.markdown_processor.html_to_markdown(content)?;
 
         // Prepend title heading
         let title_heading = format!("# {}\n\n", note.title);
@@ -599,7 +585,8 @@ impl NoteUseCases for NoteUseCasesImpl {
         }
 
         // File exists on disk but not in DB - create the note entry
-        let file_content = self.file_storage.read(path_str).await?;
+        let file_content = self.file_storage.read(path_str).await?
+            .ok_or_else(|| DomainError::ValidationError("Failed to read note content".to_string()))?;
         let filename_without_ext = Path::new(file_path)
             .file_stem()
             .and_then(|s| s.to_str())
@@ -610,8 +597,7 @@ impl NoteUseCases for NoteUseCasesImpl {
             filename_without_ext.to_string()
         } else {
             self.markdown_processor
-                .extract_title(&file_content)
-                .await?
+                .extract_title(&file_content)?
                 .unwrap_or_else(|| filename_without_ext.to_string())
         };
 
@@ -622,9 +608,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         // Publish event
         if let Some(ref publisher) = self.event_publisher {
-            publisher
-                .emit("note:created", serde_json::json!({"id": note.id}))
-                .await?;
+            publisher.emit("note:created", serde_json::json!({"id": note.id}));
         }
 
         Ok(Some(note))

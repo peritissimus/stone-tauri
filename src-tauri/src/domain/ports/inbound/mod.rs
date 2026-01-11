@@ -48,8 +48,9 @@ pub use topic_usecases::{
 };
 pub use version_usecases::VersionUseCases;
 pub use workspace_usecases::{
-    CreateWorkspaceRequest, FileSystemEntryType, ScanWorkspaceFileEntry,
-    ScanWorkspaceFolderStructure, ScanWorkspaceResponse, SelectFolderRequest,
-    SelectFolderResponse, SyncWorkspaceResponse, SyncWorkspaceStats, UpdateWorkspaceRequest,
-    ValidatePathResponse, WorkspaceUseCases,
+    CreateFolderRequest, CreateFolderResponse, CreateWorkspaceRequest, FileSystemEntryType,
+    MoveFolderRequest, MoveFolderResponse, RenameFolderRequest, RenameFolderResponse,
+    ScanWorkspaceFileEntry, ScanWorkspaceFolderStructure, ScanWorkspaceResponse,
+    SelectFolderRequest, SelectFolderResponse, SyncWorkspaceResponse, SyncWorkspaceStats,
+    UpdateWorkspaceRequest, ValidatePathResponse, WorkspaceUseCases,
 };
