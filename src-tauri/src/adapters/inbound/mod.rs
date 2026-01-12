@@ -18,6 +18,10 @@ pub mod system_commands;
 pub mod export_commands;
 pub mod attachment_commands;
 pub mod settings_commands;
+pub mod graph_commands;
+pub mod quick_capture_commands;
+pub mod task_commands;
+pub mod version_commands;
 
 // Re-exports
 pub use app_state::AppState;
