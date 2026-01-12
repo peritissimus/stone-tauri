@@ -29,6 +29,19 @@ pub enum DomainError {
 
     #[error("Domain logic error: {0}")]
     DomainLogicError(String),
+
+    // Infrastructure-related errors (used by adapters)
+    #[error("Database error: {0}")]
+    DatabaseError(String),
+
+    #[error("File storage error: {0}")]
+    FileStorageError(String),
+
+    #[error("External service error: {0}")]
+    ExternalServiceError(String),
+
+    #[error("Resource not found: {0}")]
+    NotFound(String),
 }
 
 pub type DomainResult<T> = Result<T, DomainError>;
