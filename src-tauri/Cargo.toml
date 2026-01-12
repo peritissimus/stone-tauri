@@ -21,6 +21,8 @@ tauri-build = { version = "2", features = [] }
 # Tauri Core
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
@@ -63,3 +65,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 regex = "1.12.2"
 
 mime_guess = "2.0"
+
+[dev-dependencies]
+tempfile = "3.13"

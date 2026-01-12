@@ -4,7 +4,7 @@
 /// Adapters connect the domain/application core to external systems.
 ///
 /// Structure:
-/// - out: Outbound adapters (repositories, services, external systems, storage)
+/// - outbound: Outbound adapters (repositories, services, external systems, storage)
 ///   - persistence: Database repositories
 ///   - services: Service adapters (Git, Markdown, Search, etc.)
 ///   - external: External system adapters (Events, File watching)
@@ -12,10 +12,7 @@
 /// - inbound: Inbound adapters (Tauri commands, IPC layer)
 
 pub mod inbound;
-pub mod out;
+pub mod outbound;
 
-// Re-exports will be added as adapters are implemented
-// Example:
-// pub use out::persistence::DieselNoteRepository;
-// pub use out::services::TokioFileStorage;
-// etc.
+// Re-exports for convenience
+pub use outbound::persistence::*;
