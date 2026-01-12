@@ -55,20 +55,20 @@ impl DatabaseManager {
 
     /// Initialize the database (run migrations and seed)
     pub async fn initialize(&self) -> DomainResult<()> {
-        log::info!("Initializing database...");
+        tracing::info!("Initializing database...");
 
         // Run migrations
-        log::info!("Running database migrations...");
+        tracing::info!("Running database migrations...");
         run_migrations(&self.pool)?;
 
         // Seed initial data
-        log::info!("Seeding initial data...");
+        tracing::info!("Seeding initial data...");
         seed_initial_data(self.pool.clone()).await?;
 
         // Configure SQLite pragmas
         self.configure_pragmas()?;
 
-        log::info!("Database initialized successfully");
+        tracing::info!("Database initialized successfully");
         Ok(())
     }
 
@@ -149,7 +149,7 @@ impl DatabaseManager {
             }
         }
 
-        log::info!("Database backed up to: {}", backup_path.display());
+        tracing::info!("Database backed up to: {}", backup_path.display());
         Ok(())
     }
 
@@ -171,7 +171,7 @@ impl DatabaseManager {
                 DomainError::DatabaseError(format!("Failed to restore database: {}", e))
             })?;
 
-        log::info!("Database restored from: {}", backup_path.display());
+        tracing::info!("Database restored from: {}", backup_path.display());
 
         // Reinitialize after restore
         self.configure_pragmas()?;
@@ -188,21 +188,21 @@ impl DatabaseManager {
                 DomainError::DatabaseError(format!("Failed to get connection: {}", e))
             })?;
 
-            log::info!("Running VACUUM...");
+            tracing::info!("Running VACUUM...");
             diesel::sql_query("VACUUM")
                 .execute(&mut conn)
                 .map_err(|e| {
                     DomainError::DatabaseError(format!("Failed to run VACUUM: {}", e))
                 })?;
 
-            log::info!("Running ANALYZE...");
+            tracing::info!("Running ANALYZE...");
             diesel::sql_query("ANALYZE")
                 .execute(&mut conn)
                 .map_err(|e| {
                     DomainError::DatabaseError(format!("Failed to run ANALYZE: {}", e))
                 })?;
 
-            log::info!("Database optimization completed");
+            tracing::info!("Database optimization completed");
             Ok(())
         })
         .await

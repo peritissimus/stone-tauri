@@ -128,30 +128,30 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
 
         // Check if already seeded
         if is_database_seeded(&mut conn)? {
-            log::info!("Database already seeded, skipping");
+            tracing::info!("Database already seeded, skipping");
             return Ok(());
         }
 
-        log::info!("Seeding database with initial data...");
+        tracing::info!("Seeding database with initial data...");
 
         // Seed in transaction for atomicity
         conn.transaction::<_, DomainError, _>(|conn| {
             // Seed topics
             seed_topics(conn)?;
-            log::info!("Seeded predefined topics");
+            tracing::info!("Seeded predefined topics");
 
             // Seed default settings
             seed_default_settings(conn)?;
-            log::info!("Seeded default settings");
+            tracing::info!("Seeded default settings");
 
             // Mark as seeded
             mark_database_seeded(conn)?;
-            log::info!("Marked database as seeded");
+            tracing::info!("Marked database as seeded");
 
             Ok(())
         })?;
 
-        log::info!("Database seeding completed successfully");
+        tracing::info!("Database seeding completed successfully");
         Ok(())
     })
     .await
