@@ -2,7 +2,7 @@
 //!
 //! Top-level application configuration that combines all config modules.
 
-use crate::domain::error::{DomainError, DomainResult};
+use crate::domain::errors::{DomainError, DomainResult};
 use super::{AppPaths, DatabaseConfig};
 
 /// Application environment

@@ -3,7 +3,7 @@
 //! Manages all application paths (database, attachments, temp files, etc.)
 
 use std::path::PathBuf;
-use crate::domain::error::{DomainError, DomainResult};
+use crate::domain::errors::{DomainError, DomainResult};
 
 /// Application paths for data storage
 #[derive(Debug, Clone)]

@@ -40,6 +40,9 @@ pub enum DomainError {
     #[error("External service error: {0}")]
     ExternalServiceError(String),
 
+    #[error("Configuration error: {0}")]
+    ConfigurationError(String),
+
     #[error("Resource not found: {0}")]
     NotFound(String),
 }

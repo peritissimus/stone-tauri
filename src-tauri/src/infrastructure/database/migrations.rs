@@ -4,7 +4,7 @@
 
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use crate::domain::error::{DomainError, DomainResult};
+use crate::domain::errors::{DomainError, DomainResult};
 use crate::shared::database::DbPool;
 
 /// Embed migrations from the migrations/ directory
