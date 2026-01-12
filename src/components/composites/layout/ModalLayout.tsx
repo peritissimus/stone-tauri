@@ -1,0 +1,53 @@
+/**
+ * ModalLayout Component - Base layout for modals
+ *
+ * Implements: specs/components.ts#ModalLayoutProps
+ */
+
+import React from 'react';
+import { X } from 'phosphor-react';
+import { Button } from '@/components/base/ui/button';
+
+export interface ModalLayoutProps {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  sidebar?: React.ReactNode;
+  className?: string;
+  maxWidth?: string;
+}
+
+export function ModalLayout({
+  title,
+  onClose,
+  children,
+  sidebar,
+  className = '',
+  maxWidth = 'max-w-3xl',
+}: ModalLayoutProps) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div
+        className={`rounded-xl shadow-2xl ${maxWidth} w-full max-h-[90vh] overflow-hidden border border-border bg-popover ${className}`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/50">
+          <span className="text-sm font-medium">{title}</span>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close settings">
+            <X size={18} />
+          </Button>
+        </div>
+
+        <div className="flex h-[600px]">
+          {/* Optional Sidebar */}
+          {sidebar && <div className="w-48 border-r border-border p-4 bg-muted/30">{sidebar}</div>}
+
+          {/* Content */}
+          <div className={`flex-1 p-6 overflow-y-auto ${sidebar ? '' : 'max-w-none'}`}>
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

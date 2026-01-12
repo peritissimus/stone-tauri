@@ -1,0 +1,1341 @@
+/* Global Styles for Stone */
+
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  --color-gray-200: hsl(var(--border));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-vibrancy: hsl(var(--sidebar-vibrancy));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-overlay: hsl(var(--overlay));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.05);
+  --shadow: 0 2px 8px hsl(var(--shadow-color) / 0.1);
+  --shadow-md: 0 4px 12px hsl(var(--shadow-color) / 0.1);
+  --shadow-lg: 0 8px 24px hsl(var(--shadow-color) / 0.15);
+  --shadow-xl: 0 16px 48px hsl(var(--shadow-color) / 0.2);
+  --shadow-popover: 0 4px 16px hsl(var(--shadow-color) / 0.12), 0 0 0 1px hsl(var(--border));
+
+  --spacing-titlebar: 51px;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/* Root CSS Variables - Light Theme */
+:root {
+  --border: 0 0% 85%;
+  --input: 0 0% 100%;
+  --ring: 0 0% 45%;
+  --background: 0 0% 98%;
+  --foreground: 0 0% 12%;
+  --sidebar: 0 0% 96%;
+  --sidebar-vibrancy: 0 0% 96%;
+  --primary: 211 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 12%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 211 100% 95%;
+  --accent-foreground: 211 100% 35%;
+  --popover: 0 0% 100%;
+  --popover-base: 0 0% 100%;
+  --popover-foreground: 0 0% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 12%;
+
+  /* Solid opaque overlay for inputs/popovers */
+  --overlay: 0 0% 100%;
+
+  --radius: 6px;
+
+  /* Font Variables */
+  --font-ui:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-ui-size: 13px;
+  --font-editor-heading:
+    'Barlow Semi Condensed', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-editor-body:
+    'Barlow', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-editor-size: 16px;
+  --font-editor-line-height: 1.65;
+  --font-mono: 'Fira Code', 'SF Mono', ui-monospace, Menlo, Monaco, monospace;
+  --font-mono-size: 14px;
+
+  /* Code Syntax Colors - Light Theme */
+  --code-bg: 0 0% 96%;
+  --code-text: 0 0% 18%;
+  --code-comment: 0 0% 55%;
+  --code-keyword: 262 60% 50%;
+  --code-string: 142 60% 40%;
+  --code-number: 28 80% 50%;
+  --code-function: 211 100% 45%;
+  --code-variable: 0 0% 30%;
+  --code-type: 45 80% 45%;
+  --code-operator: 180 40% 45%;
+  --code-punctuation: 0 0% 45%;
+  --code-attribute: 330 60% 50%;
+  --code-tag: 211 80% 45%;
+  --code-property: 262 50% 50%;
+
+  /* Semantic colors */
+  --success: 142 60% 40%;
+  --success-foreground: 0 0% 100%;
+  --warning: 45 90% 50%;
+  --warning-foreground: 0 0% 10%;
+
+  /* Shadow color for light mode */
+  --shadow-color: 0 0% 0%;
+}
+
+/* Dark Mode Colors - Frosted Glass Dark Theme */
+.dark {
+  --border: 0 0% 50% / 0.2;
+  --input: 0 0% 0% / 0.3;
+  --ring: 0 0% 65%;
+  --background: 0 0% 0% / 0.01;
+  --foreground: 0 0% 92%;
+  --sidebar: 0 0% 0% / 0.01;
+  --sidebar-vibrancy: 0 0% 0% / 0.01;
+  --primary: 211 100% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 100% / 0.15;
+  --secondary-foreground: 0 0% 92%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --muted: 0 0% 30% / 0.5;
+  --muted-foreground: 0 0% 65%;
+  --accent: 211 80% 40% / 0.6;
+  --accent-foreground: 211 100% 75%;
+  --popover: 0 0% 10% / 0.85;
+  --popover-base: 0 0% 10%;
+  --popover-foreground: 0 0% 92%;
+  --card: 0 0% 0% / 0.01;
+  --card-foreground: 0 0% 92%;
+
+  /* Solid opaque overlay for inputs/popovers */
+  --overlay: 0 0% 18%;
+
+  /* Code Syntax Colors - Dark Theme */
+  --code-bg: 0 0% 10% / 0.6;
+  --code-text: 0 0% 90%;
+  --code-comment: 0 0% 50%;
+  --code-keyword: 262 70% 70%;
+  --code-string: 142 50% 60%;
+  --code-number: 28 70% 65%;
+  --code-function: 211 80% 65%;
+  --code-variable: 0 0% 85%;
+  --code-type: 45 70% 65%;
+  --code-operator: 180 50% 65%;
+  --code-punctuation: 0 0% 60%;
+  --code-attribute: 330 60% 65%;
+  --code-tag: 211 70% 65%;
+  --code-property: 262 60% 70%;
+
+  /* Semantic colors */
+  --success: 142 50% 60%;
+  --success-foreground: 0 0% 10%;
+  --warning: 45 80% 60%;
+  --warning-foreground: 0 0% 10%;
+
+  /* Shadow color for dark mode */
+  --shadow-color: 0 0% 100%;
+
+  /* Popover shadow - darker for dark mode */
+  --shadow-popover: 0 8px 32px hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(var(--border));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --border: 0 0% 50% / 0.2;
+    --input: 0 0% 0% / 0.3;
+    --ring: 0 0% 65%;
+    --background: 0 0% 0% / 0.01;
+    --foreground: 0 0% 92%;
+    --sidebar: 0 0% 0% / 0.01;
+    --sidebar-vibrancy: 0 0% 0% / 0.01;
+    --primary: 211 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 100% / 0.15;
+    --secondary-foreground: 0 0% 92%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --muted: 0 0% 30% / 0.5;
+    --muted-foreground: 0 0% 65%;
+    --accent: 211 80% 40% / 0.6;
+    --accent-foreground: 211 100% 75%;
+    --popover: 0 0% 10% / 0.85;
+    --popover-base: 0 0% 10%;
+    --popover-foreground: 0 0% 92%;
+    --card: 0 0% 0% / 0.01;
+    --card-foreground: 0 0% 92%;
+
+    /* Solid opaque overlay for inputs/popovers */
+    --overlay: 0 0% 18%;
+
+    /* Code Syntax Colors - Dark Theme */
+    --code-bg: 0 0% 10% / 0.6;
+    --code-text: 0 0% 90%;
+    --code-comment: 0 0% 50%;
+    --code-keyword: 262 70% 70%;
+    --code-string: 142 50% 60%;
+    --code-number: 28 70% 65%;
+    --code-function: 211 80% 65%;
+    --code-variable: 0 0% 85%;
+    --code-type: 45 70% 65%;
+    --code-operator: 180 50% 65%;
+    --code-punctuation: 0 0% 60%;
+    --code-attribute: 330 60% 65%;
+    --code-tag: 211 70% 65%;
+    --code-property: 262 60% 70%;
+
+    /* Semantic colors */
+    --success: 142 50% 60%;
+    --success-foreground: 0 0% 10%;
+    --warning: 45 80% 60%;
+    --warning-foreground: 0 0% 10%;
+
+    /* Shadow color for dark mode */
+    --shadow-color: 0 0% 100%;
+  }
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Force dark mode by default */
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: var(--font-ui-size);
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100%;
+  /* Transparent for macOS vibrancy */
+  background-color: transparent;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+/* macOS vibrancy support - frosted glass effect */
+.vibrancy-sidebar {
+  background-color: hsl(var(--sidebar-vibrancy));
+}
+
+/* Better font for editor content - Notion style */
+.prose {
+  font-family: var(--font-editor-body);
+  font-size: var(--font-editor-size);
+  line-height: var(--font-editor-line-height);
+  letter-spacing: -0.003em;
+  color: hsl(var(--foreground));
+}
+
+.dark body {
+  background-color: transparent;
+  color: hsl(var(--foreground));
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  font-weight: 400;
+}
+
+pre code {
+  font-family: var(--font-mono);
+  font-size: var(--font-mono-size);
+  line-height: 1.5;
+}
+
+/* Remove default focus outline, we'll use Tailwind's */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* macOS-style overlay scrollbars - appear only when hovering */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: hsl(var(--shadow-color) / 0.2) transparent;
+}
+
+/* Webkit overlay scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--shadow-color) / 0.2);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--shadow-color) / 0.35);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* TipTap Editor Styles */
+.tiptap-editor {
+  @apply text-foreground;
+}
+
+.ProseMirror {
+  @apply focus:outline-hidden;
+  transition: opacity 0.15s ease;
+}
+
+/* Notion-like block hover states - only direct children, not list items */
+.ProseMirror > p,
+.ProseMirror > h1,
+.ProseMirror > h2,
+.ProseMirror > h3,
+.ProseMirror > h4,
+.ProseMirror > h5,
+.ProseMirror > h6,
+.ProseMirror > blockquote {
+  position: relative;
+  transition: background-color 0.1s ease;
+  padding: 3px 2px 3px 16px;
+  margin-left: -16px;
+  margin-right: -2px;
+  border-radius: 6px;
+}
+
+/* Block bullet marker - only for non-list blocks */
+.ProseMirror > p::before,
+.ProseMirror > h1::before,
+.ProseMirror > h2::before,
+.ProseMirror > h3::before,
+.ProseMirror > h4::before,
+.ProseMirror > h5::before,
+.ProseMirror > h6::before,
+.ProseMirror > blockquote::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0.85em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: hsl(var(--muted-foreground) / 0.25);
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+  pointer-events: none;
+}
+
+.ProseMirror > p:hover::before,
+.ProseMirror > h1:hover::before,
+.ProseMirror > h2:hover::before,
+.ProseMirror > h3:hover::before,
+.ProseMirror > h4:hover::before,
+.ProseMirror > h5:hover::before,
+.ProseMirror > h6:hover::before,
+.ProseMirror > blockquote:hover::before {
+  background-color: hsl(var(--primary) / 0.8);
+  transform: scale(1.2);
+}
+
+/* Hide block indicators when setting is disabled (but keep placeholder visible) */
+.hide-block-indicators .ProseMirror > p:not(.is-empty):not(.is-editor-empty)::before,
+.hide-block-indicators .ProseMirror > h1::before,
+.hide-block-indicators .ProseMirror > h2::before,
+.hide-block-indicators .ProseMirror > h3::before,
+.hide-block-indicators .ProseMirror > h4::before,
+.hide-block-indicators .ProseMirror > h5::before,
+.hide-block-indicators .ProseMirror > h6::before,
+.hide-block-indicators .ProseMirror > blockquote::before {
+  display: none;
+}
+
+.ProseMirror > p:hover,
+.ProseMirror > h1:hover,
+.ProseMirror > h2:hover,
+.ProseMirror > h3:hover,
+.ProseMirror > h4:hover,
+.ProseMirror > h5:hover,
+.ProseMirror > h6:hover,
+.ProseMirror > blockquote:hover {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+/* Lists - no automatic indent, custom markers align with block bullets */
+.ProseMirror ul,
+.ProseMirror ol {
+  list-style-type: none !important;
+  padding-left: 0;
+  margin-left: 0;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.ProseMirror ul > li:not(.task-item),
+.ProseMirror ol > li {
+  position: relative;
+  margin-bottom: 2px;
+  padding-left: 20px;
+  list-style: none !important;
+}
+
+/* Hide any native markers */
+.ProseMirror ul > li::marker,
+.ProseMirror ol > li::marker {
+  content: none;
+  display: none;
+}
+
+/* Bullet list marker - matches block bullet style, same position as block bullets */
+/* Exclude task lists - they have their own badge styling */
+.ProseMirror ul:not(.task-list) > li::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: hsl(var(--muted-foreground) / 0.5);
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.ProseMirror ul:not(.task-list) > li:hover::before {
+  background-color: hsl(var(--primary) / 0.8);
+  transform: scale(1.2);
+}
+
+/* Ordered list marker - number style */
+.ProseMirror ol {
+  counter-reset: list-counter;
+}
+
+.ProseMirror ol > li {
+  counter-increment: list-counter;
+}
+
+.ProseMirror ol > li::before {
+  content: counter(list-counter) '.';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 0.9em;
+  color: hsl(var(--muted-foreground) / 0.7);
+  font-weight: 500;
+  min-width: 16px;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.ProseMirror ol > li:hover::before {
+  color: hsl(var(--primary));
+}
+
+/* Nested lists - indent for native list nesting (proper markdown parity) */
+.ProseMirror li > ul,
+.ProseMirror li > ol {
+  margin-top: 4px;
+  margin-bottom: 0;
+  margin-left: 20px;
+}
+
+/* Placeholder for empty editor - must override block bullet marker */
+.ProseMirror > p.is-editor-empty:first-child::before,
+.ProseMirror > p.is-empty:first-child::before {
+  content: attr(data-placeholder) !important;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.6;
+  position: absolute;
+  left: 16px;  /* Match the paragraph's left padding */
+  top: 3px;    /* Match the paragraph's top padding */
+  width: auto !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  transform: none !important;
+  pointer-events: none;
+}
+
+/* Indented blocks (Logseq-style) - visual hierarchy with connecting lines */
+.ProseMirror [data-indent] {
+  position: relative;
+}
+
+/* Vertical connecting line for indented blocks */
+.ProseMirror [data-indent]::after {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: hsl(var(--border) / 0.5);
+  pointer-events: none;
+}
+
+/* Hide connecting line for first indent level */
+.ProseMirror [data-indent='1']::after {
+  display: none;
+}
+
+/* Prose Styling for Editor Content */
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1 {
+  @apply text-5xl font-bold mb-2 mt-12 text-foreground;
+  font-family: var(--font-editor-heading);
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.prose h2 {
+  @apply text-3xl font-bold mb-2 mt-10 text-foreground;
+  font-family: var(--font-editor-heading);
+  letter-spacing: -0.019em;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.prose h3 {
+  @apply text-2xl font-bold mb-1.5 mt-8 text-foreground;
+  font-family: var(--font-editor-heading);
+  letter-spacing: -0.014em;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.prose h4 {
+  @apply text-xl font-semibold mb-1.5 mt-6 text-foreground;
+  font-family: var(--font-editor-heading);
+  letter-spacing: -0.011em;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.prose h5,
+.prose h6 {
+  @apply text-lg font-semibold mb-1 mt-5 text-foreground;
+  font-family: var(--font-editor-heading);
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.prose p {
+  @apply text-foreground;
+  font-family: var(--font-editor-body);
+  line-height: var(--font-editor-line-height);
+  font-size: var(--font-editor-size);
+  cursor: text;
+}
+
+.prose p:empty::before {
+  content: ' ';
+  display: inline-block;
+}
+
+.prose strong,
+.prose b {
+  @apply font-semibold text-foreground;
+  font-weight: 600;
+}
+
+.prose em,
+.prose i {
+  @apply italic;
+  font-style: italic;
+}
+
+.prose strong em,
+.prose em strong {
+  @apply font-semibold italic;
+}
+
+.prose ul,
+.prose ol {
+  @apply mb-2 pl-0;
+  line-height: 1.65;
+}
+
+.prose ul {
+  list-style: none;
+}
+
+.prose ol {
+  list-style: none;
+}
+
+.prose li {
+  @apply mb-0.5;
+  font-family: var(--font-editor-body);
+  line-height: var(--font-editor-line-height);
+  font-size: var(--font-editor-size);
+}
+
+.prose blockquote {
+  @apply border-l-4 border-border pl-4 italic my-4;
+  font-family: var(--font-editor-body);
+  font-size: var(--font-editor-size);
+  line-height: var(--font-editor-line-height);
+  color: hsl(var(--foreground) / 0.7);
+}
+
+/* Highlight mark */
+.highlight-mark {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  @apply px-1 rounded;
+}
+
+/* Inline code - Notion style */
+.prose code {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground) / 0.85);
+  @apply px-2 py-1 rounded font-mono;
+  font-size: 0.875em;
+  font-weight: 500;
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+/* Code blocks - Notion style */
+.prose pre {
+  background-color: hsl(var(--code-bg));
+  border: 1px solid hsl(var(--border) / 0.5);
+  @apply p-6 rounded-lg overflow-x-auto my-3;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0 border-0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: hsl(var(--code-text));
+}
+
+/* Code block wrapper for syntax highlighting - Notion style */
+.code-block-wrapper {
+  @apply relative;
+}
+
+.code-block-wrapper pre {
+  background-color: hsl(var(--code-bg));
+  border: none;
+  @apply p-6 m-0 overflow-x-auto;
+  font-family:
+    'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.code-block-wrapper pre code {
+  @apply bg-transparent p-0 border-0;
+  color: hsl(var(--code-text));
+}
+
+/* Syntax highlighting colors - Custom theme matching app colors */
+.hljs {
+  color: hsl(var(--code-text));
+  display: block;
+  overflow-x: auto;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: hsl(var(--code-comment));
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section {
+  color: hsl(var(--code-keyword));
+  font-weight: 500;
+}
+
+.hljs-function .hljs-keyword {
+  color: hsl(var(--code-keyword));
+}
+
+.hljs-subst {
+  color: hsl(var(--code-text));
+}
+
+.hljs-string,
+.hljs-doctag,
+.hljs-meta-string {
+  color: hsl(var(--code-string));
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-params,
+.hljs-template-tag {
+  color: hsl(var(--code-number));
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-title.class_.inherited__ {
+  color: hsl(var(--code-function));
+  font-weight: 500;
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  color: hsl(var(--code-variable));
+}
+
+.hljs-type,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: hsl(var(--code-type));
+}
+
+.hljs-operator {
+  color: hsl(var(--code-operator));
+}
+
+.hljs-punctuation {
+  color: hsl(var(--code-punctuation));
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-regexp,
+.hljs-link {
+  color: hsl(var(--code-attribute));
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-meta {
+  color: hsl(var(--code-tag));
+}
+
+.hljs-property,
+.hljs-code,
+.hljs-doctag,
+.hljs-formula {
+  color: hsl(var(--code-property));
+}
+
+.hljs-deletion {
+  color: hsl(var(--destructive));
+  background-color: hsl(var(--destructive) / 0.1);
+}
+
+.hljs-addition {
+  color: hsl(var(--code-string));
+  background-color: hsl(var(--code-string) / 0.1);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+.prose a {
+  @apply text-primary no-underline hover:underline;
+  transition:
+    color 0.15s ease,
+    text-decoration-color 0.15s ease;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
+}
+
+.prose img {
+  @apply rounded-lg my-4;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow:
+    hsl(var(--shadow-color) / 0.1) 0px 0px 0px 1px,
+    hsl(var(--shadow-color) / 0.1) 0px 2px 4px;
+}
+
+.prose img:hover {
+  box-shadow:
+    hsl(var(--shadow-color) / 0.1) 0px 0px 0px 1px,
+    hsl(var(--shadow-color) / 0.2) 0px 3px 9px;
+}
+
+.prose hr {
+  @apply border-border my-6;
+  border-top-width: 1px;
+}
+
+/* Task List Styles */
+.prose ul[data-type='taskList'] {
+  @apply list-none pl-0;
+}
+
+.prose ul[data-type='taskList'] li {
+  @apply flex items-start gap-2;
+}
+
+.prose ul[data-type='taskList'] li > label {
+  @apply flex-shrink-0 mt-1;
+}
+
+.prose ul[data-type='taskList'] li > div {
+  @apply flex-1;
+}
+
+/* Table Styles */
+.prose table {
+  @apply w-full my-3;
+  border-collapse: collapse;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.stone-table {
+  @apply w-full my-3;
+  border-collapse: collapse;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.stone-table-header,
+.stone-table-cell {
+  @apply border border-border px-3 py-1.5 align-top;
+  font-size: 0.95em;
+  color: hsl(var(--foreground) / 0.9);
+  background-color: hsl(var(--card));
+}
+
+.stone-table-header {
+  @apply bg-muted font-semibold;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9em;
+}
+
+.prose table td,
+.prose table th {
+  @apply border border-border px-3 py-1.5 align-top;
+  font-size: 0.95em;
+  color: hsl(var(--foreground) / 0.9);
+  background-color: hsl(var(--card));
+}
+
+.prose table th {
+  @apply bg-muted font-semibold;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9em;
+}
+
+/* Text formatting - Notion style */
+.prose strong {
+  @apply font-semibold text-foreground;
+  font-weight: 600;
+  letter-spacing: -0.003em;
+}
+
+.prose em {
+  @apply italic;
+  font-style: italic;
+}
+
+.prose del,
+.prose s {
+  @apply text-muted-foreground line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+/* Nested lists */
+.prose ul ul,
+.prose ul ol,
+.prose ol ul,
+.prose ol ol {
+  @apply mt-1 mb-1 pl-0;
+}
+
+/* Better text selection - Notion style */
+.prose ::selection {
+  background-color: hsl(var(--primary) / 0.15);
+  color: inherit;
+}
+
+/* Notion-like focus and cursor styles */
+.ProseMirror-focused {
+  outline: none;
+}
+
+.ProseMirror {
+  caret-color: hsl(var(--foreground));
+}
+
+/* Empty lines should still be clickable */
+.ProseMirror p:empty,
+.ProseMirror h1:empty,
+.ProseMirror h2:empty,
+.ProseMirror h3:empty {
+  min-height: 1.5em;
+}
+
+/* Search highlight styles */
+.search-highlight {
+  background-color: hsl(var(--primary) / 0.2);
+  border-radius: 2px;
+}
+
+.search-highlight-active {
+  background-color: hsl(var(--primary) / 0.5);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px hsl(var(--primary));
+}
+
+/* Tippy.js styles for slash command menu */
+.tippy-box[data-theme~='slash-command'] {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.tippy-box[data-theme~='slash-command'] .tippy-content {
+  padding: 0;
+}
+
+.tippy-box[data-theme~='slash-command'] .tippy-arrow {
+  display: none;
+}
+
+/* Task list styles - Logseq-inspired todos */
+.task-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.task-list .task-list {
+  margin-top: 0.25rem;
+  margin-left: 1.75rem;
+  padding-left: 0.75rem;
+  padding-top: 0.25rem;
+  border-left: 1px solid hsl(var(--border));
+}
+
+.task-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.6rem 1fr;
+  align-items: start;
+  gap: 0.6rem;
+  padding: 0.22rem 0;
+  margin-bottom: 0.15rem;
+  border-radius: 0.6rem;
+  transition: background-color 0.18s ease;
+}
+
+.task-item:hover {
+  background-color: hsl(var(--muted) / 0.45);
+}
+
+.task-item:focus-within {
+  background-color: hsl(var(--muted) / 0.55);
+}
+
+.task-state-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  align-self: start;
+  padding: 0.22rem 0;
+  width: 3.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+}
+
+.task-state-button:hover {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+.task-state-button:focus-visible {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.25);
+  color: hsl(var(--primary));
+}
+
+.task-item[data-state='todo'] .task-state-button {
+  border-style: dashed;
+}
+
+.task-item[data-state='doing'] .task-state-button {
+  background-color: hsl(var(--primary) / 0.16);
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+.task-item[data-state='waiting'] .task-state-button {
+  background-color: hsl(var(--accent) / 0.6);
+  border-color: hsl(var(--accent-foreground));
+  color: hsl(var(--accent-foreground));
+}
+
+.task-item[data-state='hold'] .task-state-button {
+  border-style: dashed;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.task-item[data-state='done'] .task-state-button {
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.task-item[data-state='canceled'] .task-state-button {
+  background-color: hsl(var(--destructive) / 0.16);
+  border-color: hsl(var(--destructive));
+  color: hsl(var(--destructive));
+  text-decoration: line-through;
+}
+
+.task-item[data-state='idea'] .task-state-button {
+  background-color: hsl(var(--accent));
+  border-color: hsl(var(--accent-foreground));
+  color: hsl(var(--accent-foreground));
+}
+
+.task-item > div {
+  grid-column: 2;
+  padding-top: 0;
+}
+
+.task-item[data-checked='true'] > div {
+  text-decoration: line-through;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Mermaid Diagram Styles - Excalidraw-inspired */
+.mermaid-preview {
+  background: hsl(var(--background));
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.mermaid-preview svg {
+  height: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px hsl(var(--shadow-color) / 0.08));
+  overflow: visible;
+}
+
+/* Excalidraw-style rounded shapes */
+.mermaid-preview svg .node rect {
+  rx: 8 !important;
+  ry: 8 !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 2px 4px hsl(var(--shadow-color) / 0.06));
+}
+
+.mermaid-preview svg .node circle,
+.mermaid-preview svg .node ellipse {
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 2px 4px hsl(var(--shadow-color) / 0.06));
+}
+
+.mermaid-preview svg .node polygon {
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 2px 4px hsl(var(--shadow-color) / 0.06));
+}
+
+/* Mermaid diagram text styling - Excalidraw feel */
+.mermaid-preview .nodeLabel,
+.mermaid-preview .edgeLabel {
+  font-family:
+    ui-rounded,
+    'SF Pro Rounded',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Mermaid foreignObject text styling (dimensions fixed via JS post-processing) */
+.mermaid-preview .node foreignObject {
+  overflow: visible;
+}
+
+.mermaid-preview .nodeLabel {
+  white-space: nowrap;
+}
+
+.mermaid-preview .edgeLabel foreignObject {
+  overflow: visible;
+}
+
+.mermaid-preview .edgeLabel foreignObject > div {
+  white-space: nowrap;
+}
+
+/* Softer edge lines */
+.mermaid-preview svg .edgePath path {
+  stroke-width: 2.5 !important;
+}
+
+.mermaid-preview svg .edgePath marker path {
+  stroke-width: 1.5 !important;
+}
+
+/* StateDiagram-v2 tweaks */
+.mermaid-preview svg g[class*='state'] rect {
+  rx: 8 !important;
+  ry: 8 !important;
+  stroke-width: 2.5 !important;
+}
+
+.mermaid-preview svg g[class*='state'] path {
+  stroke-width: 2.5 !important;
+}
+
+.mermaid-preview svg .transition path {
+  stroke-width: 2.5 !important;
+}
+
+/* Dark mode adjustments for Mermaid */
+.dark .mermaid-preview svg {
+  filter: drop-shadow(0 1px 3px hsl(var(--shadow-color) / 0.3)) brightness(0.95);
+}
+
+.dark .mermaid-preview .nodeLabel,
+.dark .mermaid-preview .edgeLabel {
+  color: hsl(var(--foreground));
+}
+
+/* Excalidraw-style hover effects - double-click to edit */
+.mermaid-preview svg .node {
+  cursor: pointer;
+}
+
+.mermaid-preview svg .node rect,
+.mermaid-preview svg .node circle,
+.mermaid-preview svg .node ellipse,
+.mermaid-preview svg .node polygon {
+  transition: all 0.2s ease;
+}
+
+.mermaid-preview svg .node:hover rect,
+.mermaid-preview svg .node:hover circle,
+.mermaid-preview svg .node:hover ellipse,
+.mermaid-preview svg .node:hover polygon {
+  filter: drop-shadow(0 4px 8px hsl(var(--shadow-color) / 0.12)) brightness(1.02);
+  stroke-width: 3px !important;
+}
+
+.mermaid-preview svg .node:hover .nodeLabel {
+  font-weight: 600;
+}
+
+/* Add subtle background grid effect (optional, Excalidraw-like) */
+.mermaid-preview {
+  background-color: hsl(var(--card) / 0.65);
+  background-image:
+    linear-gradient(hsl(var(--shadow-color) / 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--shadow-color) / 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: -1px -1px;
+}
+
+/* Mermaid code editor in edit mode */
+.code-block-wrapper[data-language='mermaid'] pre {
+  min-height: 200px;
+  font-family:
+    'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.code-block-wrapper[data-language='mermaid'] code {
+  display: block;
+  white-space: pre;
+  font-size: 14px;
+  line-height: 1.7;
+  color: hsl(var(--code-text));
+}
+
+/* Use Patrick Hand handwriting font for all Mermaid diagrams */
+.mermaid-preview,
+.mermaid-preview svg text,
+.mermaid-preview .nodeLabel,
+.mermaid-preview .edgeLabel,
+.mermaid-preview .label,
+.mermaid-preview .label text {
+  font-family:
+    'Patrick Hand', 'Bradley Hand', 'Noteworthy', 'Chalkboard SE', 'Segoe Print', cursive !important;
+}
+
+.mermaid-preview svg path,
+.mermaid-preview svg line,
+.mermaid-preview svg polyline,
+.mermaid-preview svg polygon,
+.mermaid-preview svg rect,
+.mermaid-preview svg circle,
+.mermaid-preview svg ellipse {
+  stroke-width: 1.5px !important;
+}
