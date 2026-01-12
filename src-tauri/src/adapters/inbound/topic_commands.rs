@@ -5,11 +5,14 @@ use tauri::State;
 use crate::{
     adapters::inbound::app_state::AppState,
     domain::{
-        entities::Topic,
-        ports::inbound::{
-            ClassifyAllResponse, ClassifyNoteResponse, CreateTopicRequest,
-            EmbeddingStatusResponse, NoteTopicInfo, SimilarNoteResult, TopicClassification,
-            UpdateTopicRequest,
+        entities::{Note, Topic},
+        ports::{
+            inbound::{
+                ClassifyAllResponse, ClassifyNoteResponse, CreateTopicRequest,
+                EmbeddingStatusResponse, NoteTopicInfo, SimilarNoteResult, TopicClassification,
+                UpdateTopicRequest,
+            },
+            outbound::TopicWithCount,
         },
     },
 };
@@ -39,10 +42,10 @@ pub async fn update_topic(
 }
 
 #[tauri::command]
-pub async fn get_topic(state: State<'_, AppState>, id: String) -> Result<Topic, String> {
+pub async fn get_topic(state: State<'_, AppState>, id: String) -> Result<Option<Topic>, String> {
     state
         .topic_usecases
-        .get_topic(&id)
+        .get_topic_by_id(&id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -50,11 +53,11 @@ pub async fn get_topic(state: State<'_, AppState>, id: String) -> Result<Topic, 
 #[tauri::command]
 pub async fn list_topics(
     state: State<'_, AppState>,
-    workspace_id: Option<String>,
-) -> Result<Vec<Topic>, String> {
+    exclude_journal: Option<bool>,
+) -> Result<Vec<TopicWithCount>, String> {
     state
         .topic_usecases
-        .list_topics(workspace_id.as_deref())
+        .get_all_topics(exclude_journal)
         .await
         .map_err(|e| e.to_string())
 }
@@ -83,11 +86,10 @@ pub async fn classify_note(
 #[tauri::command]
 pub async fn classify_all_notes(
     state: State<'_, AppState>,
-    workspace_id: Option<String>,
 ) -> Result<ClassifyAllResponse, String> {
     state
         .topic_usecases
-        .classify_all_notes(workspace_id.as_deref())
+        .classify_all_notes()
         .await
         .map_err(|e| e.to_string())
 }
@@ -110,10 +112,11 @@ pub async fn get_notes_for_topic(
     state: State<'_, AppState>,
     topic_id: String,
     limit: Option<i32>,
-) -> Result<Vec<NoteTopicInfo>, String> {
+    offset: Option<i32>,
+) -> Result<Vec<Note>, String> {
     state
         .topic_usecases
-        .get_notes_for_topic(&topic_id, limit)
+        .get_notes_for_topic(&topic_id, limit, offset)
         .await
         .map_err(|e| e.to_string())
 }
@@ -129,14 +132,6 @@ pub async fn get_embedding_status(
         .map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub async fn generate_embeddings(
-    state: State<'_, AppState>,
-    workspace_id: Option<String>,
-) -> Result<(), String> {
-    state
-        .topic_usecases
-        .generate_embeddings(workspace_id.as_deref())
-        .await
-        .map_err(|e| e.to_string())
-}
+// Note: generate_embeddings command removed - no corresponding use case method
+// Embeddings are generated automatically when notes are created/updated
+// or can be triggered via classify_all_notes

@@ -29,16 +29,20 @@ pub async fn get_attachments_for_note(
 ) -> Result<Vec<Attachment>, String> {
     state
         .attachment_usecases
-        .get_attachments_for_note(&note_id)
+        .get_attachments(&note_id)
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn delete_attachment(state: State<'_, AppState>, id: String) -> Result<(), String> {
+pub async fn delete_attachment(
+    state: State<'_, AppState>,
+    id: String,
+    delete_file: Option<bool>,
+) -> Result<(), String> {
     state
         .attachment_usecases
-        .delete_attachment(&id)
+        .delete_attachment(&id, delete_file)
         .await
         .map_err(|e| e.to_string())
 }

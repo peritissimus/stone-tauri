@@ -46,7 +46,7 @@ pub async fn get_tag(state: State<'_, AppState>, id: String) -> Result<Tag, Stri
 #[tauri::command]
 pub async fn list_tags(
     state: State<'_, AppState>,
-    request: ListTagsRequest,
+    request: Option<ListTagsRequest>,
 ) -> Result<TagList, String> {
     state
         .tag_usecases
@@ -97,7 +97,7 @@ pub async fn get_tags_for_note(
 ) -> Result<Vec<Tag>, String> {
     state
         .tag_usecases
-        .get_tags_for_note(&note_id)
+        .get_note_tags(&note_id)
         .await
         .map_err(|e| e.to_string())
 }

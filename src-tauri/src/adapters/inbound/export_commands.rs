@@ -8,40 +8,40 @@ use crate::{
 };
 
 #[tauri::command]
-pub async fn export_note(
+pub async fn export_note_html(
     state: State<'_, AppState>,
     note_id: String,
-    options: ExportOptions,
+    options: Option<ExportOptions>,
 ) -> Result<ExportResult, String> {
     state
         .export_usecases
-        .export_note(&note_id, options)
+        .export_html(&note_id, options)
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_notes(
+pub async fn export_note_pdf(
     state: State<'_, AppState>,
-    note_ids: Vec<String>,
-    options: ExportOptions,
-) -> Result<Vec<ExportResult>, String> {
+    note_id: String,
+    options: Option<ExportOptions>,
+) -> Result<ExportResult, String> {
     state
         .export_usecases
-        .export_notes(&note_ids, options)
+        .export_pdf(&note_id, options)
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_notebook(
+pub async fn export_note_markdown(
     state: State<'_, AppState>,
-    notebook_id: String,
-    options: ExportOptions,
-) -> Result<Vec<ExportResult>, String> {
+    note_id: String,
+    options: Option<ExportOptions>,
+) -> Result<ExportResult, String> {
     state
         .export_usecases
-        .export_notebook(&notebook_id, options)
+        .export_markdown(&note_id, options)
         .await
         .map_err(|e| e.to_string())
 }

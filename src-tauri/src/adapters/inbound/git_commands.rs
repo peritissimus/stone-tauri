@@ -10,11 +10,11 @@ use crate::{
 #[tauri::command]
 pub async fn get_git_status(
     state: State<'_, AppState>,
-    workspace_id: Option<String>,
+    workspace_id: String,
 ) -> Result<GitStatusResponse, String> {
     state
         .git_usecases
-        .get_status(workspace_id.as_deref())
+        .get_status(&workspace_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -23,10 +23,10 @@ pub async fn get_git_status(
 pub async fn git_init(
     state: State<'_, AppState>,
     workspace_id: String,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     state
         .git_usecases
-        .initialize(&workspace_id)
+        .init(&workspace_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -35,11 +35,11 @@ pub async fn git_init(
 pub async fn git_commit(
     state: State<'_, AppState>,
     workspace_id: String,
-    message: String,
-) -> Result<GitCommitInfo, String> {
+    message: Option<String>,
+) -> Result<Option<GitCommitInfo>, String> {
     state
         .git_usecases
-        .commit(&workspace_id, &message)
+        .commit(&workspace_id, message.as_deref())
         .await
         .map_err(|e| e.to_string())
 }
@@ -62,7 +62,7 @@ pub async fn git_set_remote(
     state: State<'_, AppState>,
     workspace_id: String,
     url: String,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     state
         .git_usecases
         .set_remote(&workspace_id, &url)
@@ -78,7 +78,7 @@ pub async fn git_get_history(
 ) -> Result<Vec<GitCommitInfo>, String> {
     state
         .git_usecases
-        .get_history(&workspace_id, limit)
+        .get_commits(&workspace_id, limit)
         .await
         .map_err(|e| e.to_string())
 }

@@ -26,7 +26,6 @@ pub async fn open_external_url(state: State<'_, AppState>, url: String) -> Resul
 pub async fn show_in_folder(state: State<'_, AppState>, path: String) -> Result<(), String> {
     state
         .system_usecases
-        .show_in_folder(&path)
-        .await
+        .open_in_folder(&path)
         .map_err(|e| e.to_string())
 }

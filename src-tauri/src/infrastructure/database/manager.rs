@@ -42,8 +42,13 @@ impl DatabaseManager {
         }
 
         // Create connection pool
-        let db_url = config.database_url();
-        let pool = create_pool(&db_url).map_err(|e| {
+        let db_config = crate::shared::database::DatabaseConfig {
+            database_url: config.database_url(),
+            max_pool_size: config.max_connections,
+            min_idle: Some(1),
+            connection_timeout_secs: config.connection_timeout_secs,
+        };
+        let pool = create_pool(db_config).map_err(|e| {
             DomainError::DatabaseError(format!("Failed to create database pool: {}", e))
         })?;
 
@@ -226,9 +231,16 @@ impl DatabaseManager {
             let mut warnings = Vec::new();
 
             // Run integrity_check
+            use diesel::sql_types::Text;
+            #[derive(QueryableByName)]
+            struct IntegrityCheck {
+                #[diesel(sql_type = Text)]
+                integrity_check: String,
+            }
+
             let result: Result<String, _> = diesel::sql_query("PRAGMA integrity_check")
-                .get_result::<(String,)>(&mut conn)
-                .map(|(s,)| s);
+                .get_result::<IntegrityCheck>(&mut conn)
+                .map(|r| r.integrity_check);
 
             match result {
                 Ok(status) if status == "ok" => {}
@@ -237,9 +249,15 @@ impl DatabaseManager {
             }
 
             // Check foreign key violations
+            #[derive(QueryableByName)]
+            struct ForeignKeyCheck {
+                #[diesel(sql_type = Text)]
+                table: String,
+            }
+
             let fk_result: Result<Vec<String>, _> = diesel::sql_query("PRAGMA foreign_key_check")
-                .load::<(String,)>(&mut conn)
-                .map(|rows| rows.into_iter().map(|(s,)| s).collect());
+                .load::<ForeignKeyCheck>(&mut conn)
+                .map(|rows| rows.into_iter().map(|r| r.table).collect());
 
             match fk_result {
                 Ok(violations) if !violations.is_empty() => {
@@ -279,14 +297,27 @@ impl DatabaseManager {
             })?;
 
             // Get page count and page size
+            use diesel::sql_types::BigInt;
+            #[derive(QueryableByName)]
+            struct PageCount {
+                #[diesel(sql_type = BigInt)]
+                page_count: i64,
+            }
+
+            #[derive(QueryableByName)]
+            struct PageSize {
+                #[diesel(sql_type = BigInt)]
+                page_size: i64,
+            }
+
             let page_count: i64 = diesel::sql_query("PRAGMA page_count")
-                .get_result::<(i64,)>(&mut conn)
-                .map(|(p,)| p)
+                .get_result::<PageCount>(&mut conn)
+                .map(|r| r.page_count)
                 .unwrap_or(0);
 
             let page_size: i64 = diesel::sql_query("PRAGMA page_size")
-                .get_result::<(i64,)>(&mut conn)
-                .map(|(p,)| p)
+                .get_result::<PageSize>(&mut conn)
+                .map(|r| r.page_size)
                 .unwrap_or(4096);
 
             let database_size = page_count * page_size;
@@ -306,7 +337,7 @@ impl DatabaseManager {
         .await
         .map_err(|e| {
             DomainError::DatabaseError(format!("Failed to get database stats: {}", e))
-        })??
+        })?
     }
 }
 

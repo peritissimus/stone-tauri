@@ -4,9 +4,15 @@ use tauri::State;
 
 use crate::{
     adapters::inbound::app_state::AppState,
-    domain::ports::inbound::{
-        HybridSearchResultItem, HybridSearchWeights, SearchByDateRangeRequest, SearchRequest,
-        SearchType, VectorSearchResult,
+    domain::{
+        entities::Note,
+        ports::{
+            inbound::{
+                HybridSearchResultItem, HybridSearchWeights, SearchByDateRangeRequest,
+                SearchRequest, SearchType, VectorSearchResult,
+            },
+            outbound::SearchResult,
+        },
     },
 };
 
@@ -14,10 +20,10 @@ use crate::{
 pub async fn search_notes(
     state: State<'_, AppState>,
     request: SearchRequest,
-) -> Result<Vec<HybridSearchResultItem>, String> {
+) -> Result<Vec<SearchResult>, String> {
     state
         .search_usecases
-        .search(request)
+        .full_text_search(request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -26,13 +32,12 @@ pub async fn search_notes(
 pub async fn hybrid_search(
     state: State<'_, AppState>,
     query: String,
-    workspace_id: Option<String>,
     weights: Option<HybridSearchWeights>,
     limit: Option<i32>,
 ) -> Result<Vec<HybridSearchResultItem>, String> {
     state
         .search_usecases
-        .hybrid_search(&query, workspace_id.as_deref(), weights, limit)
+        .hybrid_search(&query, weights, limit)
         .await
         .map_err(|e| e.to_string())
 }
@@ -40,13 +45,11 @@ pub async fn hybrid_search(
 #[tauri::command]
 pub async fn semantic_search(
     state: State<'_, AppState>,
-    query: String,
-    workspace_id: Option<String>,
-    limit: Option<i32>,
+    request: SearchRequest,
 ) -> Result<Vec<VectorSearchResult>, String> {
     state
         .search_usecases
-        .semantic_search(&query, workspace_id.as_deref(), limit)
+        .semantic_search(request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -55,7 +58,7 @@ pub async fn semantic_search(
 pub async fn search_by_date_range(
     state: State<'_, AppState>,
     request: SearchByDateRangeRequest,
-) -> Result<Vec<HybridSearchResultItem>, String> {
+) -> Result<Vec<Note>, String> {
     state
         .search_usecases
         .search_by_date_range(request)

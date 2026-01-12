@@ -4,9 +4,11 @@
 
 use diesel::prelude::*;
 use std::sync::Arc;
+use chrono::Utc;
 use crate::{
     domain::errors::{DomainError, DomainResult},
     shared::database::{DbPool, schema},
+    adapters::outbound::persistence::utils::datetime_to_timestamp,
 };
 
 /// Check if database has been seeded
@@ -28,10 +30,13 @@ fn is_database_seeded(conn: &mut SqliteConnection) -> DomainResult<bool> {
 fn mark_database_seeded(conn: &mut SqliteConnection) -> DomainResult<()> {
     use schema::settings::dsl::*;
 
+    let now = datetime_to_timestamp(&Utc::now());
+
     diesel::insert_into(settings)
         .values((
             key.eq("database_seeded"),
             value.eq("true"),
+            updated_at.eq(now),
         ))
         .execute(conn)
         .map_err(|e| {
@@ -56,7 +61,7 @@ fn seed_topics(conn: &mut SqliteConnection) -> DomainResult<()> {
 
     for (topic_name, topic_description, topic_color) in predefined_topics {
         let topic_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = datetime_to_timestamp(&Utc::now());
 
         diesel::insert_into(topics)
             .values((
@@ -64,8 +69,9 @@ fn seed_topics(conn: &mut SqliteConnection) -> DomainResult<()> {
                 name.eq(topic_name),
                 description.eq(Some(topic_description)),
                 color.eq(Some(topic_color)),
-                created_at.eq(&now),
-                updated_at.eq(&now),
+                is_predefined.eq(1),
+                created_at.eq(now),
+                updated_at.eq(now),
             ))
             .execute(conn)
             .map_err(|e| {
@@ -96,11 +102,14 @@ fn seed_default_settings(conn: &mut SqliteConnection) -> DomainResult<()> {
         ("default_view", "editor"),
     ];
 
+    let now = datetime_to_timestamp(&Utc::now());
+
     for (setting_key, setting_value) in default_settings {
         diesel::insert_into(settings)
             .values((
                 key.eq(setting_key),
                 value.eq(setting_value),
+                updated_at.eq(now),
             ))
             .execute(conn)
             .map_err(|e| {
@@ -135,21 +144,34 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
         tracing::info!("Seeding database with initial data...");
 
         // Seed in transaction for atomicity
-        conn.transaction::<_, DomainError, _>(|conn| {
-            // Seed topics
-            seed_topics(conn)?;
-            tracing::info!("Seeded predefined topics");
+        // Note: Use diesel::result::Error directly in transaction then convert
+        let seed_result: Result<(), DomainError> = (|| {
+            conn.transaction::<_, diesel::result::Error, _>(|conn| {
+                // Seed topics - convert errors inside
+                seed_topics(conn).map_err(|e| {
+                    diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Seeded predefined topics");
 
-            // Seed default settings
-            seed_default_settings(conn)?;
-            tracing::info!("Seeded default settings");
+                // Seed default settings
+                seed_default_settings(conn).map_err(|e| {
+                    diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Seeded default settings");
 
-            // Mark as seeded
-            mark_database_seeded(conn)?;
-            tracing::info!("Marked database as seeded");
+                // Mark as seeded
+                mark_database_seeded(conn).map_err(|e| {
+                    diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Marked database as seeded");
 
-            Ok(())
-        })?;
+                Ok(())
+            }).map_err(|e| {
+                DomainError::DatabaseError(format!("Transaction failed: {}", e))
+            })
+        })();
+
+        seed_result?;
 
         tracing::info!("Database seeding completed successfully");
         Ok(())
