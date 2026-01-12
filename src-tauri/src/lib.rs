@@ -12,8 +12,12 @@ pub mod shared;
 
 // Re-export for convenience
 pub use domain::*;
-pub use infrastructure::*;
-pub use shared::*;
+
+// Re-export infrastructure config and database types
+pub use infrastructure::{AppConfig, AppPaths, DatabaseConfig, Environment, DatabaseManager};
+
+// Re-export shared database types (use qualified name to avoid conflicts)
+pub use shared::database::{create_pool, DbPool};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

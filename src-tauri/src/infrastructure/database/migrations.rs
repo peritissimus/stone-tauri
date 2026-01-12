@@ -2,7 +2,6 @@
 //!
 //! Handles running Diesel migrations for schema setup and updates.
 
-use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::shared::database::DbPool;
