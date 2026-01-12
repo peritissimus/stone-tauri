@@ -10,6 +10,7 @@ pub mod version_repository;
 pub mod workspace_repository;
 
 // Service ports
+pub mod database_service;
 pub mod embedding_service;
 pub mod event_publisher;
 pub mod export_service;
@@ -37,6 +38,7 @@ pub use version_repository::{VersionListItem, VersionRepository};
 pub use workspace_repository::WorkspaceRepository;
 
 // Service exports
+pub use database_service::DatabaseService;
 pub use embedding_service::{
     ClassificationResult, EmbeddingResult, EmbeddingService, EmbeddingStatus, SimilarNote,
 };
