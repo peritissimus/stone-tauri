@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::path::Path;
 use diesel::prelude::*;
 use crate::{
-    domain::error::{DomainError, DomainResult},
+    domain::errors::{DomainError, DomainResult},
     infrastructure::config::DatabaseConfig,
     shared::database::{DbPool, create_pool},
 };
