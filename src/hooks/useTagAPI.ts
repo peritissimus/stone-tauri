@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import { useTagStore } from '@/stores/tagStore';
 import { TagWithCount } from '@/types';
-import { TAG_CHANNELS } from '@/constants/ipcChannels';
+import { TAG_COMMANDS } from '@/constants/tauriCommands';
 import { createEntityAPI } from './createEntityAPI';
 import { tagAPI } from '@/api';
 import { handleIpcResponse } from '@/lib/tauri-ipc';
@@ -18,9 +18,9 @@ import { handleIpcResponse } from '@/lib/tauri-ipc';
 const useTagCRUD = createEntityAPI<TagWithCount>({
   entityName: 'tag',
   channels: {
-    GET_ALL: TAG_CHANNELS.GET_ALL,
-    CREATE: TAG_CHANNELS.CREATE,
-    DELETE: TAG_CHANNELS.DELETE,
+    GET_ALL: TAG_COMMANDS.GET_ALL,
+    CREATE: TAG_COMMANDS.CREATE,
+    DELETE: TAG_COMMANDS.DELETE,
   },
   useStore: () => {
     const store = useTagStore();

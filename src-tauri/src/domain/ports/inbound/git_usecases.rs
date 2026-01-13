@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitStatusResponse {
     pub is_repo: bool,
     pub has_changes: bool,
@@ -16,6 +17,7 @@ pub struct GitStatusResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitCommitInfo {
     pub hash: String,
     pub short_hash: String,
@@ -25,6 +27,7 @@ pub struct GitCommitInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitSyncResponse {
     pub success: bool,
     pub pulled: i32,

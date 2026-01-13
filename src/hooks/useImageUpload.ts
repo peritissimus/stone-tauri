@@ -5,7 +5,7 @@
 import { useEffect, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { invokeIpc } from '@/lib/tauri-ipc';
-import { ATTACHMENT_CHANNELS } from '@/constants/ipcChannels';
+import { ATTACHMENT_COMMANDS } from '@/constants/tauriCommands';
 import { logger } from '@/utils/logger';
 
 interface UseImageUploadOptions {
@@ -91,7 +91,7 @@ export function useImageUpload({ editor, noteId, enabled = true }: UseImageUploa
           relativePath: string;
           absolutePath: string;
           filename: string;
-        }>(ATTACHMENT_CHANNELS.UPLOAD_IMAGE, {
+        }>(ATTACHMENT_COMMANDS.UPLOAD_IMAGE, {
           noteId,
           imageData: base64Data,
           mimeType: file.type,

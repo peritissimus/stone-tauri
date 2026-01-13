@@ -2,7 +2,7 @@
  * FileTree Component - container that wires actions and renders folder/file nodes.
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heading3 } from '@/components/base/ui/text';
 import { InputModal } from '@/components/composites';

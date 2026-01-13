@@ -2,7 +2,7 @@
  * GraphView Component - Visual note graph with force-directed layout
  */
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useNoteAPI } from '@/hooks/useNoteAPI';
 import { useNoteStore } from '@/stores/noteStore';

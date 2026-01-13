@@ -6,7 +6,9 @@
 
 pub mod config;
 pub mod database;
+pub mod container;
 
 // Re-exports
 pub use config::{AppConfig, DatabaseConfig, AppPaths, Environment};
 pub use database::{DatabaseManager, run_migrations, seed_initial_data};
+pub use container::Container;

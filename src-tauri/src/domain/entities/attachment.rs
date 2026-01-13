@@ -8,6 +8,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 
 /// Attachment entity
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Attachment {
     pub id: String,
     pub note_id: String,

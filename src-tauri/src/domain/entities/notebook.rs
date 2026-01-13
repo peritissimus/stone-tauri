@@ -9,6 +9,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 
 /// Notebook entity with full business logic
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Notebook {
     pub id: String,
     pub name: String,

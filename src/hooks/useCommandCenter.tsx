@@ -139,8 +139,20 @@ export function useCommandCenter() {
       // No query - return recent notes (top 3)
       return activeNotes
         .sort((a, b) => {
-          const aTime = a.updatedAt instanceof Date ? a.updatedAt.getTime() : a.updatedAt;
-          const bTime = b.updatedAt instanceof Date ? b.updatedAt.getTime() : b.updatedAt;
+          const aTime = a.updatedAt instanceof Date
+            ? a.updatedAt.getTime()
+            : typeof a.updatedAt === 'string'
+              ? new Date(a.updatedAt).getTime()
+              : a.updated_at instanceof Date
+                ? a.updated_at.getTime()
+                : new Date(a.updated_at).getTime();
+          const bTime = b.updatedAt instanceof Date
+            ? b.updatedAt.getTime()
+            : typeof b.updatedAt === 'string'
+              ? new Date(b.updatedAt).getTime()
+              : b.updated_at instanceof Date
+                ? b.updated_at.getTime()
+                : new Date(b.updated_at).getTime();
           return bTime - aTime;
         })
         .slice(0, 3)

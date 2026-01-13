@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NoteTopicAssignment {
     pub note_id: String,
     pub topic_id: String,
@@ -13,6 +14,7 @@ pub struct NoteTopicAssignment {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NoteTopicWithDetails {
     pub note_id: String,
     pub topic_id: String,
@@ -24,6 +26,7 @@ pub struct NoteTopicWithDetails {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TopicWithCount {
     pub id: String,
     pub name: String,
@@ -37,12 +40,14 @@ pub struct TopicWithCount {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TopicAssignmentOptions {
     pub confidence: Option<f32>,
     pub is_manual: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetNotesForTopicOptions {
     pub limit: Option<i32>,
     pub offset: Option<i32>,
@@ -50,6 +55,7 @@ pub struct GetNotesForTopicOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TopicNoteRecord {
     pub note_id: String,
     pub confidence: f32,
@@ -57,6 +63,7 @@ pub struct TopicNoteRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FindAllWithCountsOptions {
     pub exclude_journal: Option<bool>,
 }

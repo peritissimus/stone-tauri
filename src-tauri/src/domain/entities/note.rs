@@ -9,6 +9,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 
 /// Note entity with full business logic
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Note {
     pub id: String,
     pub title: String,

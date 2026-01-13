@@ -7,16 +7,32 @@ use crate::{
     domain::ports::outbound::Setting,
 };
 
+/// Response for get_all_settings
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetAllSettingsResponse {
+    pub settings: Vec<Setting>,
+}
+
+/// Response for get_setting
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSettingResponse {
+    pub value: Option<String>,
+}
+
 #[tauri::command]
 pub async fn get_setting(
     state: State<'_, AppState>,
     key: String,
-) -> Result<Option<String>, String> {
-    state
+) -> Result<GetSettingResponse, String> {
+    let value = state
         .settings_usecases
         .get(&key)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GetSettingResponse { value })
 }
 
 #[tauri::command]
@@ -33,10 +49,14 @@ pub async fn set_setting(
 }
 
 #[tauri::command]
-pub async fn get_all_settings(state: State<'_, AppState>) -> Result<Vec<Setting>, String> {
-    state
+pub async fn get_all_settings(
+    state: State<'_, AppState>,
+) -> Result<GetAllSettingsResponse, String> {
+    let settings = state
         .settings_usecases
         .get_all()
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GetAllSettingsResponse { settings })
 }

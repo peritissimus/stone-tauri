@@ -4,7 +4,7 @@
 
 import { useCallback, useState } from 'react';
 import { invokeIpc } from '@/lib/tauri-ipc';
-import { SEARCH_CHANNELS } from '@/constants/ipcChannels';
+import { SEARCH_COMMANDS } from '@/constants/tauriCommands';
 import { Note } from '@/types';
 
 interface SearchResult {
@@ -37,7 +37,7 @@ export function useSearchAPI() {
       setLoading(true);
       setError(null);
       try {
-        const response = await invokeIpc<SearchResults>(SEARCH_CHANNELS.FULL_TEXT, {
+        const response = await invokeIpc<SearchResults>(SEARCH_COMMANDS.FULL_TEXT, {
           query,
           ...filters,
         });
@@ -65,7 +65,7 @@ export function useSearchAPI() {
       setLoading(true);
       setError(null);
       try {
-        const response = await invokeIpc<SearchResults>(SEARCH_CHANNELS.SEMANTIC, {
+        const response = await invokeIpc<SearchResults>(SEARCH_COMMANDS.SEMANTIC, {
           query,
           ...filters,
         });
@@ -98,7 +98,7 @@ export function useSearchAPI() {
       setLoading(true);
       setError(null);
       try {
-        const response = await invokeIpc<SearchResults>(SEARCH_CHANNELS.HYBRID, {
+        const response = await invokeIpc<SearchResults>(SEARCH_COMMANDS.HYBRID, {
           query,
           ...filters,
         });
@@ -126,7 +126,7 @@ export function useSearchAPI() {
       setLoading(true);
       setError(null);
       try {
-        const response = await invokeIpc<{ notes: Note[]; total: number }>(SEARCH_CHANNELS.BY_TAG, {
+        const response = await invokeIpc<{ notes: Note[]; total: number }>(SEARCH_COMMANDS.BY_TAG, {
           tagIds: tagIds,
           match_all: matchAll,
         });
@@ -156,7 +156,7 @@ export function useSearchAPI() {
       setError(null);
       try {
         const response = await invokeIpc<{ notes: Note[]; total: number }>(
-          SEARCH_CHANNELS.BY_DATE_RANGE,
+          SEARCH_COMMANDS.BY_DATE_RANGE,
           {
             start_date: startDate,
             end_date: endDate,

@@ -8,7 +8,7 @@ import React, { useCallback } from 'react';
 import { logger } from '@/utils/logger';
 import { useNotebookStore } from '@/stores/notebookStore';
 import { CaretRight, CaretDown } from 'phosphor-react';
-import { Notebook } from '@/types';
+import { NotebookWithChildren } from '@/types';
 import { Button } from '@/components/base/ui/button';
 import { Text } from '@/components/base/ui/text';
 import { TreeItem } from '@/components/composites';
@@ -27,11 +27,6 @@ export function NotebookTree() {
       ))}
     </div>
   );
-}
-
-interface NotebookWithChildren extends Notebook {
-  children?: NotebookWithChildren[];
-  note_count?: number;
 }
 
 interface NotebookTreeItemProps {

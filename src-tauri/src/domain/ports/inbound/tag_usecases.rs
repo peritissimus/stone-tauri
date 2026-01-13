@@ -3,12 +3,14 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateTagRequest {
     pub name: String,
     pub color: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateTagRequest {
     pub id: String,
     pub name: Option<String>,
@@ -16,6 +18,7 @@ pub struct UpdateTagRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListTagsRequest {
     pub include_note_count: Option<bool>,
 }

@@ -116,7 +116,7 @@ export async function invokeIpc<T>(
   try {
     // Tauri's invoke returns the data directly or throws on error
     // We need to wrap it in our IpcResponse format for consistency
-    const data = await invoke<T>(command, params || {});
+    const data = await invoke<T>(command, params as Record<string, unknown> | undefined);
 
     if (debug && logPrefix) {
       logger.info(`${logPrefix} response`, { success: true });

@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateTopicRequest {
     pub name: String,
     pub description: Option<String>,
@@ -10,6 +11,7 @@ pub struct CreateTopicRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateTopicRequest {
     pub id: String,
     pub name: Option<String>,
@@ -18,12 +20,14 @@ pub struct UpdateTopicRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ClassifyNoteResponse {
     pub note_id: String,
     pub topics: Vec<TopicClassification>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TopicClassification {
     pub topic_id: String,
     pub topic_name: String,
@@ -31,6 +35,7 @@ pub struct TopicClassification {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ClassifyAllResponse {
     pub processed: i32,
     pub total: i32,
@@ -38,6 +43,7 @@ pub struct ClassifyAllResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SimilarNoteResult {
     pub note_id: String,
     pub title: String,
@@ -45,6 +51,7 @@ pub struct SimilarNoteResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EmbeddingStatusResponse {
     pub ready: bool,
     pub total_notes: i32,
@@ -53,6 +60,7 @@ pub struct EmbeddingStatusResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NoteTopicInfo {
     pub note_id: String,
     pub topic_id: String,

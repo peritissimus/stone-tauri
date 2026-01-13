@@ -258,9 +258,9 @@ export const NoteEditor = forwardRef<NoteEditorHandle>((_, ref) => {
       <NoteEditorHeader
         title={title}
         onTitleChange={handleTitleChange}
-        isFavorite={activeNote.isFavorite || false}
-        isPinned={activeNote.isPinned || false}
-        isArchived={activeNote.isArchived || false}
+        isFavorite={Boolean(activeNote.isFavorite || activeNote.is_favorite)}
+        isPinned={Boolean(activeNote.isPinned || activeNote.is_pinned)}
+        isArchived={Boolean(activeNote.isArchived || activeNote.is_archived)}
         onToggleFavorite={handleToggleFavorite}
         onTogglePin={handleTogglePin}
         onToggleArchive={handleToggleArchive}

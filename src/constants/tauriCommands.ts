@@ -79,9 +79,9 @@ export const TOPIC_COMMANDS = {
   UPDATE: 'update_topic',
   DELETE: 'delete_topic',
   GET_NOTES_BY_TOPIC: 'get_notes_for_topic',
-  GET_TOPICS_FOR_NOTE: 'get_tags_for_note', // This might need to be corrected
-  ASSIGN_TO_NOTE: 'add_tag_to_note', // This might need to be corrected
-  REMOVE_FROM_NOTE: 'remove_tag_from_note', // This might need to be corrected
+  GET_TOPICS_FOR_NOTE: 'get_topics_for_note',
+  ASSIGN_TO_NOTE: 'assign_topic_to_note',
+  REMOVE_FROM_NOTE: 'remove_topic_from_note',
   CLASSIFY_NOTE: 'classify_note',
   CLASSIFY_ALL: 'classify_all_notes',
   RECLASSIFY_ALL: 'classify_all_notes', // Same as CLASSIFY_ALL
@@ -161,6 +161,66 @@ export function getCommandFromChannel(channel: string): string {
   return `${snakeCaseAction}_${entity}`;
 }
 
+// Event names (Tauri uses kebab-case for events)
+export const EVENTS = {
+  // Workspace events
+  WORKSPACE_CREATED: 'workspace-created',
+  WORKSPACE_UPDATED: 'workspace-updated',
+  WORKSPACE_DELETED: 'workspace-deleted',
+  WORKSPACE_SWITCHED: 'workspace-switched',
+  WORKSPACE_SCANNED: 'workspace-scanned',
+  FILE_CHANGED: 'file-changed',
+  FILE_CREATED: 'file-created',
+  FILE_DELETED: 'file-deleted',
+
+  // Note events
+  NOTE_CREATED: 'note-created',
+  NOTE_UPDATED: 'note-updated',
+  NOTE_DELETED: 'note-deleted',
+  NOTE_VERSION_RESTORED: 'note-version-restored',
+
+  // Notebook events
+  NOTEBOOK_CREATED: 'notebook-created',
+  NOTEBOOK_UPDATED: 'notebook-updated',
+  NOTEBOOK_DELETED: 'notebook-deleted',
+
+  // Tag events
+  TAG_CREATED: 'tag-created',
+  TAG_UPDATED: 'tag-updated',
+  TAG_DELETED: 'tag-deleted',
+
+  // Attachment events
+  ATTACHMENT_ADDED: 'attachment-added',
+  ATTACHMENT_DELETED: 'attachment-deleted',
+
+  // Database events
+  DB_MIGRATION_PROGRESS: 'db-migration-progress',
+  DB_MIGRATION_COMPLETE: 'db-migration-complete',
+  DB_BACKUP_PROGRESS: 'db-backup-progress',
+  DB_BACKUP_COMPLETE: 'db-backup-complete',
+  DB_RESTORE_PROGRESS: 'db-restore-progress',
+  DB_RESTORE_COMPLETE: 'db-restore-complete',
+  DB_VACUUM_PROGRESS: 'db-vacuum-progress',
+  DB_VACUUM_COMPLETE: 'db-vacuum-complete',
+
+  // Settings events
+  SETTINGS_CHANGED: 'settings-changed',
+
+  // Topic events
+  TOPIC_CREATED: 'topic-created',
+  TOPIC_UPDATED: 'topic-updated',
+  TOPIC_DELETED: 'topic-deleted',
+  NOTE_CLASSIFIED: 'note-classified',
+  EMBEDDING_PROGRESS: 'embedding-progress',
+
+  // ML Service status events
+  ML_STATUS_CHANGED: 'ml-status-changed',
+  ML_OPERATION_STARTED: 'ml-operation-started',
+  ML_OPERATION_PROGRESS: 'ml-operation-progress',
+  ML_OPERATION_COMPLETED: 'ml-operation-completed',
+  ML_OPERATION_ERROR: 'ml-operation-error',
+} as const;
+
 // Export all command constants for validation
 export const ALL_COMMANDS = [
   ...Object.values(WORKSPACE_COMMANDS),
@@ -176,3 +236,6 @@ export const ALL_COMMANDS = [
   ...Object.values(GIT_COMMANDS),
   ...Object.values(QUICK_CAPTURE_COMMANDS),
 ] as const;
+
+// Export all events as an array
+export const ALL_EVENTS = Object.values(EVENTS);

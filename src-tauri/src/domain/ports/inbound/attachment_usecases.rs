@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AddAttachmentRequest {
     pub note_id: String,
     pub file_path: String,
@@ -10,6 +11,7 @@ pub struct AddAttachmentRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UploadImageRequest {
     pub note_id: String,
     pub image_data: String, // base64
@@ -18,6 +20,7 @@ pub struct UploadImageRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UploadImageResponse {
     pub attachment: Attachment,
     pub markdown_link: String,

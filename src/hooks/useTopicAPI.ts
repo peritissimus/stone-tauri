@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import { useTopicStore } from '@/stores/topicStore';
 import type { TopicWithCount } from '@/types';
-import { TOPIC_CHANNELS } from '@/constants/ipcChannels';
+import { TOPIC_COMMANDS } from '@/constants/tauriCommands';
 import { createEntityAPI } from './createEntityAPI';
 import { topicAPI } from '@/api';
 import { handleIpcResponse } from '@/lib/tauri-ipc';
@@ -18,10 +18,10 @@ import { handleIpcResponse } from '@/lib/tauri-ipc';
 const useTopicCRUD = createEntityAPI<TopicWithCount>({
   entityName: 'topic',
   channels: {
-    GET_ALL: TOPIC_CHANNELS.GET_ALL,
-    CREATE: TOPIC_CHANNELS.CREATE,
-    UPDATE: TOPIC_CHANNELS.UPDATE,
-    DELETE: TOPIC_CHANNELS.DELETE,
+    GET_ALL: TOPIC_COMMANDS.GET_ALL,
+    CREATE: TOPIC_COMMANDS.CREATE,
+    UPDATE: TOPIC_COMMANDS.UPDATE,
+    DELETE: TOPIC_COMMANDS.DELETE,
   },
   useStore: () => {
     const store = useTopicStore();

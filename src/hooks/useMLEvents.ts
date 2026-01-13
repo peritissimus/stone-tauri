@@ -4,7 +4,7 @@
 
 import { useEffect, useRef } from 'react';
 import { subscribe } from '@/lib/events';
-import { EVENTS } from '@/constants/ipcChannels';
+import { EVENTS } from '@/constants/tauriCommands';
 import type {
   MLStatusChangedPayload,
   MLOperationStartedPayload,
@@ -37,47 +37,46 @@ export function useMLEvents(handlers: MLEventHandlers): void {
   handlersRef.current = handlers;
 
   useEffect(() => {
-    const unsubscribers: (() => void)[] = [];
+    let unsubscribers: (() => void)[] = [];
 
-    if (handlersRef.current.onStatusChanged) {
-      unsubscribers.push(
-        subscribe(EVENTS.ML_STATUS_CHANGED, (payload) =>
+    const setupSubscriptions = async () => {
+      if (handlersRef.current.onStatusChanged) {
+        const unsub = await subscribe(EVENTS.ML_STATUS_CHANGED, (payload) =>
           handlersRef.current.onStatusChanged?.(payload as MLStatusChangedPayload),
-        ),
-      );
-    }
+        );
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onOperationStarted) {
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_STARTED, (payload) =>
+      if (handlersRef.current.onOperationStarted) {
+        const unsub = await subscribe(EVENTS.ML_OPERATION_STARTED, (payload) =>
           handlersRef.current.onOperationStarted?.(payload as MLOperationStartedPayload),
-        ),
-      );
-    }
+        );
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onOperationProgress) {
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_PROGRESS, (payload) =>
+      if (handlersRef.current.onOperationProgress) {
+        const unsub = await subscribe(EVENTS.ML_OPERATION_PROGRESS, (payload) =>
           handlersRef.current.onOperationProgress?.(payload as MLOperationProgressPayload),
-        ),
-      );
-    }
+        );
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onOperationCompleted) {
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_COMPLETED, (payload) =>
+      if (handlersRef.current.onOperationCompleted) {
+        const unsub = await subscribe(EVENTS.ML_OPERATION_COMPLETED, (payload) =>
           handlersRef.current.onOperationCompleted?.(payload as MLOperationCompletedPayload),
-        ),
-      );
-    }
+        );
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onOperationError) {
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_ERROR, (payload) =>
+      if (handlersRef.current.onOperationError) {
+        const unsub = await subscribe(EVENTS.ML_OPERATION_ERROR, (payload) =>
           handlersRef.current.onOperationError?.(payload as MLOperationErrorPayload),
-        ),
-      );
-    }
+        );
+        unsubscribers.push(unsub);
+      }
+    };
+
+    setupSubscriptions();
 
     return () => {
       unsubscribers.forEach((unsub) => unsub());
@@ -96,42 +95,40 @@ export function useMLEvents(handlers: MLEventHandlers): void {
 export function useMLEventsSync(): void {
   // Import store lazily to avoid circular dependencies
   useEffect(() => {
-    const unsubscribers: (() => void)[] = [];
+    let unsubscribers: (() => void)[] = [];
 
     // Dynamically import to get store actions
-    import('@/stores/mlStatusStore').then(({ useMLStatusStore }) => {
+    const setupSubscriptions = async () => {
+      const { useMLStatusStore } = await import('@/stores/mlStatusStore');
       const store = useMLStatusStore.getState();
 
-      unsubscribers.push(
-        subscribe(EVENTS.ML_STATUS_CHANGED, (payload) => {
-          store.setServiceStatus(payload as MLStatusChangedPayload);
-        }),
-      );
+      const unsub1 = await subscribe(EVENTS.ML_STATUS_CHANGED, (payload) => {
+        store.setServiceStatus(payload as MLStatusChangedPayload);
+      });
+      unsubscribers.push(unsub1);
 
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_STARTED, (payload) => {
-          store.startOperation(payload as MLOperationStartedPayload);
-        }),
-      );
+      const unsub2 = await subscribe(EVENTS.ML_OPERATION_STARTED, (payload) => {
+        store.startOperation(payload as MLOperationStartedPayload);
+      });
+      unsubscribers.push(unsub2);
 
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_PROGRESS, (payload) => {
-          store.updateProgress(payload as MLOperationProgressPayload);
-        }),
-      );
+      const unsub3 = await subscribe(EVENTS.ML_OPERATION_PROGRESS, (payload) => {
+        store.updateProgress(payload as MLOperationProgressPayload);
+      });
+      unsubscribers.push(unsub3);
 
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_COMPLETED, (payload) => {
-          store.completeOperation(payload as MLOperationCompletedPayload);
-        }),
-      );
+      const unsub4 = await subscribe(EVENTS.ML_OPERATION_COMPLETED, (payload) => {
+        store.completeOperation(payload as MLOperationCompletedPayload);
+      });
+      unsubscribers.push(unsub4);
 
-      unsubscribers.push(
-        subscribe(EVENTS.ML_OPERATION_ERROR, (payload) => {
-          store.failOperation(payload as MLOperationErrorPayload);
-        }),
-      );
-    });
+      const unsub5 = await subscribe(EVENTS.ML_OPERATION_ERROR, (payload) => {
+        store.failOperation(payload as MLOperationErrorPayload);
+      });
+      unsubscribers.push(unsub5);
+    };
+
+    setupSubscriptions();
 
     return () => {
       unsubscribers.forEach((unsub) => unsub());

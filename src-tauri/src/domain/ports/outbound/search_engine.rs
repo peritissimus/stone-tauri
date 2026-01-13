@@ -11,12 +11,14 @@ pub enum SearchMatchType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchHighlights {
     pub title: Option<String>,
     pub content: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchResult {
     pub note: Note,
     pub relevance: f32,
@@ -25,6 +27,7 @@ pub struct SearchResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SemanticSearchResult {
     pub note_id: String,
     pub title: String,
@@ -33,6 +36,7 @@ pub struct SemanticSearchResult {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchOptions {
     pub limit: Option<i32>,
     pub offset: Option<i32>,
@@ -50,6 +54,7 @@ pub enum DateRangeField {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DateRangeOptions {
     pub start_date: chrono::DateTime<chrono::Utc>,
     pub end_date: chrono::DateTime<chrono::Utc>,
@@ -59,12 +64,14 @@ pub struct DateRangeOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchWeights {
     pub fts: f32,
     pub semantic: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HybridSearchOptions {
     #[serde(flatten)]
     pub base: SearchOptions,
@@ -72,6 +79,7 @@ pub struct HybridSearchOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TagSearchOptions {
     #[serde(flatten)]
     pub base: SearchOptions,

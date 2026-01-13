@@ -2,7 +2,6 @@
  * Editor with Block Menu - Wrapper that adds floating block controls
  */
 
-import React from 'react';
 import { Editor, EditorContent } from '@tiptap/react';
 import { FloatingBlockMenu } from './FloatingBlockMenu';
 

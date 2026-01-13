@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { FileText, BookOpen, ArrowRight, Sparkle, CaretRight, PencilSimple, Plus } from 'phosphor-react';
 import { useHomePageData } from '@/hooks/useHomePageData';
 import { formatRelativeDate, getGreeting, getFolderPath } from '@/utils/dateFormat';
@@ -166,8 +166,10 @@ export function HomePage() {
                     note={{
                       id: note.id,
                       title: note.title,
-                      updatedAt: note.updatedAt,
-                      filePath: note.filePath,
+                      updatedAt: note.updatedAt instanceof Date
+                        ? note.updatedAt
+                        : new Date(note.updatedAt || note.updated_at),
+                      filePath: note.filePath || note.path || null,
                     }}
                     onClick={handleNoteClick}
                   />

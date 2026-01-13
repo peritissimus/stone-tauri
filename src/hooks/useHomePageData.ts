@@ -35,7 +35,11 @@ export function useHomePageData() {
   const recentNotes = useMemo(
     () =>
       [...notes]
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .sort((a, b) => {
+          const aTime = new Date(a.updatedAt || a.updated_at).getTime();
+          const bTime = new Date(b.updatedAt || b.updated_at).getTime();
+          return bTime - aTime;
+        })
         .slice(0, 5),
     [notes],
   );
@@ -62,13 +66,15 @@ export function useHomePageData() {
   const todaysJournal = useMemo(() => {
     const expectedJournalPath = `Journal/${journalFilename}.md`;
     const normalizedExpectedPath = normalizePath(expectedJournalPath);
-    return notes.find((note) => normalizePath(note.filePath) === normalizedExpectedPath);
+    return notes.find((note) => normalizePath(note.filePath || note.path || '') === normalizedExpectedPath);
   }, [notes, journalFilename]);
 
   // Stats
   const totalNotes = notes.length;
   const todayNotes = useMemo(
-    () => notes.filter((n) => new Date(n.updatedAt).toDateString() === todayDateString).length,
+    () =>
+      notes.filter((n) => new Date(n.updatedAt || n.updated_at).toDateString() === todayDateString)
+        .length,
     [notes, todayDateString],
   );
 

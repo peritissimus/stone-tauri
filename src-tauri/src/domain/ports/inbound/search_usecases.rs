@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VectorSearchResult {
     pub note_id: String,
     pub title: String,
@@ -10,6 +11,7 @@ pub struct VectorSearchResult {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchRequest {
     pub query: String,
     pub workspace_id: Option<String>,
@@ -20,6 +22,7 @@ pub struct SearchRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HybridSearchWeights {
     pub fts: f32,
     pub semantic: f32,
@@ -34,6 +37,7 @@ pub enum SearchType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HybridSearchResultItem {
     pub note: Note,
     pub score: f32,
@@ -41,6 +45,7 @@ pub struct HybridSearchResultItem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchByDateRangeRequest {
     pub start_date: i64,
     pub end_date: i64,

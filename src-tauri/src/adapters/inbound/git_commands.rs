@@ -7,6 +7,20 @@ use crate::{
     domain::ports::inbound::{GitCommitInfo, GitStatusResponse, GitSyncResponse},
 };
 
+/// Response for git_get_history (get_commits)
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetCommitsResponse {
+    pub commits: Vec<GitCommitInfo>,
+}
+
+/// Response for git operations that return success boolean
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitOperationResponse {
+    pub success: bool,
+}
+
 #[tauri::command]
 pub async fn get_git_status(
     state: State<'_, AppState>,
@@ -23,12 +37,14 @@ pub async fn get_git_status(
 pub async fn git_init(
     state: State<'_, AppState>,
     workspace_id: String,
-) -> Result<bool, String> {
-    state
+) -> Result<GitOperationResponse, String> {
+    let success = state
         .git_usecases
         .init(&workspace_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GitOperationResponse { success })
 }
 
 #[tauri::command]
@@ -62,12 +78,14 @@ pub async fn git_set_remote(
     state: State<'_, AppState>,
     workspace_id: String,
     url: String,
-) -> Result<bool, String> {
-    state
+) -> Result<GitOperationResponse, String> {
+    let success = state
         .git_usecases
         .set_remote(&workspace_id, &url)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GitOperationResponse { success })
 }
 
 #[tauri::command]
@@ -75,10 +93,12 @@ pub async fn git_get_history(
     state: State<'_, AppState>,
     workspace_id: String,
     limit: Option<i32>,
-) -> Result<Vec<GitCommitInfo>, String> {
-    state
+) -> Result<GetCommitsResponse, String> {
+    let commits = state
         .git_usecases
         .get_commits(&workspace_id, limit)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GetCommitsResponse { commits })
 }

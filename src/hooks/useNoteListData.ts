@@ -134,13 +134,13 @@ export function useNoteListData() {
 
       switch (sortBy) {
         case 'updated': {
-          const timeA = noteA ? new Date(noteA.updatedAt).getTime() : 0;
-          const timeB = noteB ? new Date(noteB.updatedAt).getTime() : 0;
+          const timeA = noteA ? new Date(noteA.updatedAt || noteA.updated_at || 0).getTime() : 0;
+          const timeB = noteB ? new Date(noteB.updatedAt || noteB.updated_at || 0).getTime() : 0;
           return timeA - timeB;
         }
         case 'created': {
-          const timeA = noteA ? new Date(noteA.createdAt).getTime() : 0;
-          const timeB = noteB ? new Date(noteB.createdAt).getTime() : 0;
+          const timeA = noteA ? new Date(noteA.createdAt || noteA.created_at || 0).getTime() : 0;
+          const timeB = noteB ? new Date(noteB.createdAt || noteB.created_at || 0).getTime() : 0;
           return timeA - timeB;
         }
         case 'favorite': {

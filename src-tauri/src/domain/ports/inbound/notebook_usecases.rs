@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateNotebookRequest {
     pub name: String,
     pub parent_id: Option<String>,
@@ -13,6 +14,7 @@ pub struct CreateNotebookRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateNotebookRequest {
     pub id: String,
     pub name: Option<String>,
@@ -23,6 +25,7 @@ pub struct UpdateNotebookRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListNotebooksRequest {
     pub workspace_id: Option<String>,
     pub parent_id: Option<Option<String>>,
@@ -30,12 +33,14 @@ pub struct ListNotebooksRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DeleteNotebookRequest {
     pub id: String,
     pub delete_notes: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MoveNotebookRequest {
     pub id: String,
     pub target_parent_id: Option<String>,

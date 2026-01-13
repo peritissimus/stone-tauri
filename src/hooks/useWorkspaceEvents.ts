@@ -4,7 +4,7 @@
 
 import { useEffect, useRef } from 'react';
 import { subscribe } from '@/lib/events';
-import { EVENTS } from '@/constants/ipcChannels';
+import { EVENTS } from '@/constants/tauriCommands';
 
 export interface WorkspaceEventHandlers {
   onCreated?: (payload: unknown) => void;
@@ -21,8 +21,8 @@ export interface WorkspaceEventHandlers {
  *
  * @example
  * useWorkspaceEvents({
- *   onUpdated: () => refreshWorkspace(),
- *   onSwitched: (payload) => handleWorkspaceSwitch(payload),
+ *   onUpdated: () => refreshWorkspace();
+ *   onSwitched: (payload) => handleWorkspaceSwitch(payload);
  * });
  */
 export function useWorkspaceEvents(handlers: WorkspaceEventHandlers): void {
@@ -30,39 +30,38 @@ export function useWorkspaceEvents(handlers: WorkspaceEventHandlers): void {
   handlersRef.current = handlers;
 
   useEffect(() => {
-    const unsubscribers: (() => void)[] = [];
+    let unsubscribers: (() => void)[] = [];
 
-    if (handlersRef.current.onCreated) {
-      unsubscribers.push(
-        subscribe(EVENTS.WORKSPACE_CREATED, (payload) => handlersRef.current.onCreated?.(payload)),
-      );
-    }
+    const setupSubscriptions = async () => {
+      if (handlersRef.current.onCreated) {
+        const unsub = await subscribe(EVENTS.WORKSPACE_CREATED, (payload) => handlersRef.current.onCreated?.(payload));
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onUpdated) {
-      unsubscribers.push(
-        subscribe(EVENTS.WORKSPACE_UPDATED, (payload) => handlersRef.current.onUpdated?.(payload)),
-      );
-    }
+      if (handlersRef.current.onUpdated) {
+        const unsub = await subscribe(EVENTS.WORKSPACE_UPDATED, (payload) => handlersRef.current.onUpdated?.(payload));
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onDeleted) {
-      unsubscribers.push(
-        subscribe(EVENTS.WORKSPACE_DELETED, (payload) => handlersRef.current.onDeleted?.(payload)),
-      );
-    }
+      if (handlersRef.current.onDeleted) {
+        const unsub = await subscribe(EVENTS.WORKSPACE_DELETED, (payload) => handlersRef.current.onDeleted?.(payload));
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onSwitched) {
-      unsubscribers.push(
-        subscribe(EVENTS.WORKSPACE_SWITCHED, (payload) =>
+      if (handlersRef.current.onSwitched) {
+        const unsub = await subscribe(EVENTS.WORKSPACE_SWITCHED, (payload) =>
           handlersRef.current.onSwitched?.(payload),
-        ),
-      );
-    }
+        );
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onScanned) {
-      unsubscribers.push(
-        subscribe(EVENTS.WORKSPACE_SCANNED, (payload) => handlersRef.current.onScanned?.(payload)),
-      );
-    }
+      if (handlersRef.current.onScanned) {
+        const unsub = await subscribe(EVENTS.WORKSPACE_SCANNED, (payload) => handlersRef.current.onScanned?.(payload));
+        unsubscribers.push(unsub);
+      }
+    };
+
+    setupSubscriptions();
 
     return () => {
       unsubscribers.forEach((unsub) => unsub());

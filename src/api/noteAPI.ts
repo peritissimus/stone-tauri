@@ -37,7 +37,7 @@ export const noteAPI = {
    * Get a note by its file path
    */
   getByPath: (path: string): Promise<IpcResponse<Note>> =>
-    invokeIpc(NOTE_COMMANDS.GET_BY_PATH, { path }),
+    invokeIpc(NOTE_COMMANDS.GET_BY_PATH, { file_path: path }),
 
   /**
    * Get note content (lazy load from file)

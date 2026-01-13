@@ -15,7 +15,9 @@ export interface Workspace {
   id: string;
   name: string;
   path: string;
+  folderPath?: string; // Alias for path
   is_active: boolean | number;
+  isActive?: boolean | number; // Alias
   git_enabled: boolean | number;
   git_remote_url: string | null;
   created_at: Date | string;
@@ -26,15 +28,23 @@ export interface Note {
   id: string;
   title: string;
   path: string;
+  filePath?: string; // Alias for path
   notebook_id: string | null;
+  notebookId?: string | null; // Alias
   is_favorite: boolean | number;
+  isFavorite?: boolean | number; // Alias
   is_pinned: boolean | number;
+  isPinned?: boolean | number; // Alias
   is_archived: boolean | number;
+  isArchived?: boolean | number; // Alias
   is_deleted: boolean | number;
+  isDeleted?: boolean | number; // Alias
   workspace_id: string;
   file_modified_at: Date | string;
   created_at: Date | string;
+  createdAt?: Date | string; // Alias
   updated_at: Date | string;
+  updatedAt?: Date | string; // Alias
 }
 
 export interface Notebook {
@@ -74,6 +84,7 @@ export interface Topic {
 
 export interface TopicWithCount extends Topic {
   noteCount: number;
+  isPredefined?: boolean;
 }
 
 export interface Attachment {
@@ -224,4 +235,35 @@ export interface AppError {
   message: string;
   details?: unknown;
   timestamp: UnixTimestamp;
+}
+
+// Migration Types
+export interface Migration {
+  version: number;
+  name: string;
+  appliedAt: UnixTimestamp;
+  checksum: string;
+}
+
+// Graph Data Types
+export interface GraphNode {
+  id: string;
+  label: string;
+}
+
+export interface GraphLink {
+  source: string;
+  target: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+// Notebook with children for tree display
+export interface NotebookWithChildren extends Notebook {
+  children?: NotebookWithChildren[];
+  icon?: string;
+  note_count?: number;
 }

@@ -36,17 +36,31 @@ pub async fn get_note(state: State<'_, AppState>, id: String) -> Result<Option<N
         .map_err(|e| e.to_string())
 }
 
+/// Response for get_note_content
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct GetNoteContentResponse {
+    pub content: String,
+}
+
 /// Get note content by ID
 #[tauri::command]
 pub async fn get_note_content(
     state: State<'_, AppState>,
     id: String,
-) -> Result<String, String> {
-    state
+) -> Result<GetNoteContentResponse, String> {
+    tracing::info!("get_note_content called with id: {}", id);
+
+    let content = state
         .note_usecases
         .get_note_content(&id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| {
+            tracing::error!("get_note_content error: {}", e);
+            e.to_string()
+        })?;
+
+    tracing::info!("get_note_content success: loaded {} bytes", content.len());
+    Ok(GetNoteContentResponse { content })
 }
 
 /// Save note content
@@ -108,12 +122,19 @@ pub async fn restore_note(state: State<'_, AppState>, id: String) -> Result<(), 
         .map_err(|e| e.to_string())
 }
 
+/// Response for get_all_notes
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetAllNotesResponse {
+    pub notes: Vec<Note>,
+}
+
 /// Get all notes with optional filtering
 #[tauri::command]
 pub async fn get_all_notes(
     state: State<'_, AppState>,
     query: Option<NoteQuery>,
-) -> Result<Vec<Note>, String> {
+) -> Result<GetAllNotesResponse, String> {
     let query = query.unwrap_or(NoteQuery {
         workspace_id: None,
         notebook_id: None,
@@ -122,11 +143,13 @@ pub async fn get_all_notes(
         limit: None,
     });
 
-    state
+    let notes = state
         .note_usecases
         .get_all_notes(query)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GetAllNotesResponse { notes })
 }
 
 /// Move a note to a different notebook
@@ -149,11 +172,56 @@ pub async fn get_note_by_path(
     state: State<'_, AppState>,
     file_path: String,
 ) -> Result<Option<Note>, String> {
-    state
-        .note_usecases
-        .get_note_by_path(&file_path)
+    tracing::info!("get_note_by_path called with: {}", file_path);
+
+    // Get active workspace to normalize the path
+    let workspace = state
+        .workspace_usecases
+        .get_active_workspace()
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    let normalized_path = if let Some(ws) = workspace {
+        // Normalize both paths by removing leading/trailing slashes
+        let workspace_normalized = ws.folder_path.trim_start_matches('/').trim_end_matches('/');
+        let file_normalized = file_path.trim_start_matches('/');
+
+        // Try to strip workspace path prefix
+        let normalized = if let Some(relative) = file_normalized.strip_prefix(workspace_normalized) {
+            relative.trim_start_matches('/').to_string()
+        } else {
+            file_normalized.to_string()
+        };
+
+        tracing::info!(
+            "Normalized path: '{}' -> '{}' (workspace: '{}')",
+            file_path,
+            normalized,
+            workspace_normalized
+        );
+        normalized
+    } else {
+        file_path.trim_start_matches('/').to_string()
+    };
+
+    let result = state
+        .note_usecases
+        .get_note_by_path(&normalized_path)
+        .await
+        .map_err(|e| {
+            tracing::error!("get_note_by_path error: {}", e);
+            e.to_string()
+        });
+
+    if let Ok(ref note) = result {
+        if let Some(n) = note {
+            tracing::info!("get_note_by_path success: found note id={}", n.id);
+        } else {
+            tracing::warn!("get_note_by_path: no note found for path '{}'", normalized_path);
+        }
+    }
+
+    result
 }
 
 /// Toggle favorite status

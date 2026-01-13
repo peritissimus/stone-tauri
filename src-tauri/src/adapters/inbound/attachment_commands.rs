@@ -10,6 +10,13 @@ use crate::{
     },
 };
 
+/// Response for get_attachments_for_note
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetAttachmentsResponse {
+    pub attachments: Vec<Attachment>,
+}
+
 #[tauri::command]
 pub async fn add_attachment(
     state: State<'_, AppState>,
@@ -26,12 +33,14 @@ pub async fn add_attachment(
 pub async fn get_attachments_for_note(
     state: State<'_, AppState>,
     note_id: String,
-) -> Result<Vec<Attachment>, String> {
-    state
+) -> Result<GetAttachmentsResponse, String> {
+    let attachments = state
         .attachment_usecases
         .get_attachments(&note_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(GetAttachmentsResponse { attachments })
 }
 
 #[tauri::command]

@@ -9,31 +9,44 @@ use crate::domain::{entities::Note, errors::DomainResult};
 
 /// Input for creating a new note
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateNoteInput {
     pub title: String,
     pub content: Option<String>,
+    #[serde(alias = "notebookId")]
     pub notebook_id: Option<String>,
+    #[serde(alias = "folderPath")]
     pub workspace_id: Option<String>,
 }
 
 /// Input for updating a note
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateNoteInput {
     pub id: String,
     pub title: Option<String>,
     pub content: Option<String>,
+    #[serde(alias = "notebookId")]
     pub notebook_id: Option<String>,
+    #[serde(alias = "isFavorite")]
     pub is_favorite: Option<bool>,
+    #[serde(alias = "isPinned")]
     pub is_pinned: Option<bool>,
+    #[serde(alias = "isArchived")]
     pub is_archived: Option<bool>,
 }
 
 /// Query parameters for listing notes
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NoteQuery {
+    #[serde(alias = "workspaceId")]
     pub workspace_id: Option<String>,
+    #[serde(alias = "notebookId")]
     pub notebook_id: Option<String>,
+    #[serde(alias = "isFavorite")]
     pub is_favorite: Option<bool>,
+    #[serde(alias = "isArchived")]
     pub is_archived: Option<bool>,
     pub limit: Option<i64>,
 }

@@ -123,6 +123,53 @@ fn seed_default_settings(conn: &mut SqliteConnection) -> DomainResult<()> {
     Ok(())
 }
 
+/// Seed default workspace
+fn seed_default_workspace(conn: &mut SqliteConnection) -> DomainResult<()> {
+    use schema::workspaces::dsl::*;
+
+    // Use the user's NoteBook directory
+    let home_dir = dirs::home_dir()
+        .ok_or_else(|| {
+            DomainError::ConfigurationError("Could not determine home directory".to_string())
+        })?;
+
+    let default_workspace_path = home_dir.join("NoteBook");
+
+    // Create the directory if it doesn't exist
+    if !default_workspace_path.exists() {
+        std::fs::create_dir_all(&default_workspace_path).map_err(|e| {
+            DomainError::FileStorageError(format!(
+                "Failed to create default workspace directory: {}",
+                e
+            ))
+        })?;
+    }
+
+    let workspace_id = uuid::Uuid::new_v4().to_string();
+    let now = datetime_to_timestamp(&Utc::now());
+    let workspace_path = default_workspace_path
+        .to_str()
+        .ok_or_else(|| {
+            DomainError::ConfigurationError("Invalid workspace path".to_string())
+        })?;
+
+    diesel::insert_into(workspaces)
+        .values((
+            id.eq(&workspace_id),
+            name.eq("NoteBook"),
+            folder_path.eq(workspace_path),
+            is_active.eq(1),
+            created_at.eq(now),
+            last_accessed_at.eq(now),
+        ))
+        .execute(conn)
+        .map_err(|e| {
+            DomainError::DatabaseError(format!("Failed to seed default workspace: {}", e))
+        })?;
+
+    Ok(())
+}
+
 /// Seed initial data into the database
 ///
 /// This function is idempotent - it will only seed data if the database
@@ -147,6 +194,12 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
         // Note: Use diesel::result::Error directly in transaction then convert
         let seed_result: Result<(), DomainError> = (|| {
             conn.transaction::<_, diesel::result::Error, _>(|conn| {
+                // Seed default workspace first
+                seed_default_workspace(conn).map_err(|e| {
+                    diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Seeded default workspace");
+
                 // Seed topics - convert errors inside
                 seed_topics(conn).map_err(|e| {
                     diesel::result::Error::RollbackTransaction

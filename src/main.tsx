@@ -13,7 +13,8 @@ import 'tippy.js/dist/tippy.css';
 
 // Defer font loading - not critical for initial render
 // Fonts will load in background after app mounts
-requestIdleCallback(() => {
+// Use requestIdleCallback if available, otherwise setTimeout as fallback
+const loadFonts = () => {
   import('@fontsource/inter/400.css');
   import('@fontsource/inter/500.css');
   import('@fontsource/inter/600.css');
@@ -33,7 +34,13 @@ requestIdleCallback(() => {
   import('@fontsource/fira-code/400.css');
   import('@fontsource/fira-code/500.css');
   import('@fontsource/fira-code/600.css');
-});
+};
+
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(loadFonts);
+} else {
+  setTimeout(loadFonts, 1);
+}
 
 const root = document.getElementById('root');
 

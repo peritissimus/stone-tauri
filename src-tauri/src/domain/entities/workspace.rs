@@ -9,6 +9,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 
 /// Workspace entity with full business logic
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Workspace {
     pub id: String,
     pub name: String,

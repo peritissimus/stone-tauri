@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NotebookFindOptions {
     pub workspace_id: Option<String>,
     pub parent_id: Option<Option<String>>,
@@ -10,6 +11,7 @@ pub struct NotebookFindOptions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NotebookWithCount {
     pub id: String,
     pub name: String,
@@ -26,6 +28,7 @@ pub struct NotebookWithCount {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NotebookPositionUpdate {
     pub id: String,
     pub position: i32,

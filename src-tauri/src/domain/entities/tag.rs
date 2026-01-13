@@ -8,6 +8,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 
 /// Tag entity
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Tag {
     pub id: String,
     pub name: String,

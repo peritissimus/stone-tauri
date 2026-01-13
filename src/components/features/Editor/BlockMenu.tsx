@@ -2,7 +2,6 @@
  * Block Menu Component - Notion-like floating block options
  */
 
-import React from 'react';
 import { Editor } from '@tiptap/react';
 import {
   Plus,

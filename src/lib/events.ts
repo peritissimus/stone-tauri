@@ -4,7 +4,7 @@
  * This module provides type-safe wrappers for Tauri event subscriptions.
  */
 
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { listen } from '@tauri-apps/api/event';
 
 /**
  * Event handler function type

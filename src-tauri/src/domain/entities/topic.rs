@@ -8,6 +8,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 
 /// Topic entity
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Topic {
     pub id: String,
     pub name: String,

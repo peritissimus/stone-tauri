@@ -6,7 +6,10 @@ use crate::{
     adapters::inbound::app_state::AppState,
     domain::{
         entities::Tag,
-        ports::inbound::{CreateTagRequest, ListTagsRequest, TagList, UpdateTagRequest},
+        ports::{
+            inbound::{CreateTagRequest, ListTagsRequest, TagList, UpdateTagRequest},
+            outbound::TagWithCount,
+        },
     },
 };
 
@@ -43,16 +46,44 @@ pub async fn get_tag(state: State<'_, AppState>, id: String) -> Result<Tag, Stri
         .map_err(|e| e.to_string())
 }
 
+/// Response for list_tags
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListTagsResponse {
+    pub tags: Vec<TagWithCount>,
+}
+
 #[tauri::command]
 pub async fn list_tags(
     state: State<'_, AppState>,
     request: Option<ListTagsRequest>,
-) -> Result<TagList, String> {
-    state
+) -> Result<ListTagsResponse, String> {
+    let result = state
         .tag_usecases
         .list_tags(request)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Extract tags from the TagList enum
+    let tags = match result {
+        TagList::WithCount(tags) => tags,
+        TagList::WithoutCount(tags) => {
+            // Convert Tag to TagWithCount with zero count
+            tags.into_iter()
+                .map(|t| TagWithCount {
+                    id: t.id,
+                    name: t.name,
+                    description: None, // Tag entity doesn't have description
+                    color: Some(t.color),
+                    created_at: t.created_at,
+                    updated_at: t.updated_at,
+                    note_count: 0,
+                })
+                .collect()
+        }
+    };
+
+    Ok(ListTagsResponse { tags })
 }
 
 #[tauri::command]

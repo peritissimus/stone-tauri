@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import { useNotebookStore } from '@/stores/notebookStore';
 import { Notebook } from '@/types';
-import { NOTEBOOK_CHANNELS } from '@/constants/ipcChannels';
+import { NOTEBOOK_COMMANDS } from '@/constants/tauriCommands';
 import { createEntityAPI } from './createEntityAPI';
 import { notebookAPI } from '@/api';
 
@@ -17,10 +17,10 @@ import { notebookAPI } from '@/api';
 const useNotebookCRUD = createEntityAPI<Notebook>({
   entityName: 'notebook',
   channels: {
-    GET_ALL: NOTEBOOK_CHANNELS.GET_ALL,
-    CREATE: NOTEBOOK_CHANNELS.CREATE,
-    UPDATE: NOTEBOOK_CHANNELS.UPDATE,
-    DELETE: NOTEBOOK_CHANNELS.DELETE,
+    GET_ALL: NOTEBOOK_COMMANDS.GET_ALL,
+    CREATE: NOTEBOOK_COMMANDS.CREATE,
+    UPDATE: NOTEBOOK_COMMANDS.UPDATE,
+    DELETE: NOTEBOOK_COMMANDS.DELETE,
   },
   useStore: () => {
     const store = useNotebookStore();

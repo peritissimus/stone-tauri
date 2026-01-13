@@ -28,25 +28,26 @@ export function useFileEvents(handlers: FileEventHandlers): void {
   handlersRef.current = handlers;
 
   useEffect(() => {
-    const unsubscribers: (() => void)[] = [];
+    let unsubscribers: (() => void)[] = [];
 
-    if (handlersRef.current.onCreated) {
-      unsubscribers.push(
-        events.onFileCreated((payload) => handlersRef.current.onCreated?.(payload)),
-      );
-    }
+    const setupSubscriptions = async () => {
+      if (handlersRef.current.onCreated) {
+        const unsub = await events.onFileCreated((payload) => handlersRef.current.onCreated?.(payload));
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onChanged) {
-      unsubscribers.push(
-        events.onFileChanged((payload) => handlersRef.current.onChanged?.(payload)),
-      );
-    }
+      if (handlersRef.current.onChanged) {
+        const unsub = await events.onFileChanged((payload) => handlersRef.current.onChanged?.(payload));
+        unsubscribers.push(unsub);
+      }
 
-    if (handlersRef.current.onDeleted) {
-      unsubscribers.push(
-        events.onFileDeleted((payload) => handlersRef.current.onDeleted?.(payload)),
-      );
-    }
+      if (handlersRef.current.onDeleted) {
+        const unsub = await events.onFileDeleted((payload) => handlersRef.current.onDeleted?.(payload));
+        unsubscribers.push(unsub);
+      }
+    };
+
+    setupSubscriptions();
 
     return () => {
       unsubscribers.forEach((unsub) => unsub());
@@ -67,7 +68,16 @@ export function useFileEventsAll(handler: (payload: unknown) => void): void {
   handlerRef.current = handler;
 
   useEffect(() => {
-    const unsub = events.onFileSystemChange((payload) => handlerRef.current(payload));
-    return unsub;
+    let unsub: (() => void) | undefined;
+
+    const setupSubscription = async () => {
+      unsub = await events.onFileSystemChange((payload) => handlerRef.current(payload));
+    };
+
+    setupSubscription();
+
+    return () => {
+      unsub?.();
+    };
   }, []);
 }

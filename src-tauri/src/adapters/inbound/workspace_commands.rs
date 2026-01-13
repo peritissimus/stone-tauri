@@ -44,14 +44,25 @@ pub async fn get_workspace(
         .map_err(|e| e.to_string())
 }
 
+/// Response for list_workspaces
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListWorkspacesResponse {
+    pub workspaces: Vec<Workspace>,
+}
+
 /// List all workspaces
 #[tauri::command]
-pub async fn list_workspaces(state: State<'_, AppState>) -> Result<Vec<Workspace>, String> {
-    state
+pub async fn list_workspaces(
+    state: State<'_, AppState>,
+) -> Result<ListWorkspacesResponse, String> {
+    let workspaces = state
         .workspace_usecases
         .list_workspaces()
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    Ok(ListWorkspacesResponse { workspaces })
 }
 
 /// Set active workspace
@@ -67,16 +78,39 @@ pub async fn set_active_workspace(
         .map_err(|e| e.to_string())
 }
 
+/// Response for get_active_workspace
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct GetActiveWorkspaceResponse {
+    pub workspace: Option<Workspace>,
+}
+
 /// Get active workspace
 #[tauri::command]
 pub async fn get_active_workspace(
     state: State<'_, AppState>,
-) -> Result<Option<Workspace>, String> {
-    state
+) -> Result<GetActiveWorkspaceResponse, String> {
+    tracing::info!("get_active_workspace called");
+    let workspace = state
         .workspace_usecases
         .get_active_workspace()
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| {
+            tracing::error!("get_active_workspace error: {}", e);
+            e.to_string()
+        })?;
+
+    if let Some(ref ws) = workspace {
+        tracing::info!(
+            "get_active_workspace success: id={}, name={}, path={}",
+            ws.id,
+            ws.name,
+            ws.folder_path
+        );
+    } else {
+        tracing::warn!("get_active_workspace: no active workspace found");
+    }
+
+    Ok(GetActiveWorkspaceResponse { workspace })
 }
 
 /// Delete a workspace
@@ -134,11 +168,25 @@ pub async fn scan_workspace(
     state: State<'_, AppState>,
     workspace_id: String,
 ) -> Result<ScanWorkspaceResponse, String> {
-    state
+    tracing::info!("scan_workspace called with workspace_id: {}", workspace_id);
+    let result = state
         .workspace_usecases
         .scan_workspace(&workspace_id)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| {
+            tracing::error!("scan_workspace error: {}", e);
+            e.to_string()
+        });
+
+    if let Ok(ref response) = result {
+        tracing::info!(
+            "scan_workspace success: {} files, {} folders in structure",
+            response.files.len(),
+            response.structure.len()
+        );
+    }
+
+    result
 }
 
 /// Sync workspace with filesystem

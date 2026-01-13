@@ -4,7 +4,6 @@
  * Implements: specs/components.ts#TagListProps
  */
 
-import React from 'react';
 import { useTagStore } from '@/stores/tagStore';
 import { Button } from '@/components/base/ui/button';
 import { Text } from '@/components/base/ui/text';
