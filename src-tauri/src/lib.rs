@@ -4,6 +4,8 @@
 /// Layers: domain, application, adapters, infrastructure, shared
 
 use tauri::Manager;
+#[cfg(target_os = "macos")]
+use tauri::window::{Effect, EffectsBuilder};
 
 // Declare modules
 pub mod adapters;
@@ -39,6 +41,15 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
         .init();
 
     tracing::info!("Starting Stone application...");
+
+    #[cfg(target_os = "macos")]
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_effects(
+            EffectsBuilder::new()
+                .effects([Effect::UnderWindowBackground])
+                .build(),
+        );
+    }
 
     // Get app handle
     let app_handle = app.handle().clone();

@@ -111,12 +111,12 @@
 /* Root CSS Variables - Light Theme */
 :root {
   --border: 0 0% 85%;
-  --input: 0 0% 100%;
+  --input: 0 0% 100% / 0.5;
   --ring: 0 0% 45%;
-  --background: 0 0% 98%;
+  --background: 0 0% 98% / 0.5;
   --foreground: 0 0% 12%;
-  --sidebar: 0 0% 96%;
-  --sidebar-vibrancy: 0 0% 96%;
+  --sidebar: 0 0% 96% / 0.5;
+  --sidebar-vibrancy: 0 0% 96% / 0.5;
   --primary: 211 100% 50%;
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 96%;
@@ -318,13 +318,13 @@ body {
   overflow: hidden;
   height: 100%;
   /* Transparent for macOS vibrancy */
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 #root {
   height: 100%;
   overflow: hidden;
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 /* macOS vibrancy support - frosted glass effect */
