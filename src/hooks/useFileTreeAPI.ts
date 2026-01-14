@@ -11,7 +11,7 @@ interface FolderStructure {
   path: string;
   relativePath: string;
   type: 'file' | 'folder';
-  children?: FolderStructure[];
+  children?: FolderStructure[] | null;
 }
 
 const normalizePath = (path: string) =>

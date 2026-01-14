@@ -64,9 +64,20 @@ export const noteAPI = {
     title: string;
     content?: string;
     notebookId?: string;
+    workspaceId?: string;
     folderPath?: string;
+    relativePath?: string;
   }): Promise<IpcResponse<Note>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.CREATE, { input: data });
+    const response = await invokeIpc(NOTE_COMMANDS.CREATE, {
+      input: {
+        title: data.title,
+        content: data.content,
+        notebookId: data.notebookId,
+        workspaceId: data.workspaceId,
+        folderPath: data.folderPath,
+        relativePath: data.relativePath,
+      },
+    });
     return validateResponse(response, NoteSchema);
   },
 

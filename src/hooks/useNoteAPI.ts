@@ -72,11 +72,19 @@ export function useNoteAPI() {
   );
 
   const createNote = useCallback(
-    async (data: { title: string; content?: string; folderPath?: string }) => {
+    async (data: {
+      title: string;
+      content?: string;
+      folderPath?: string;
+      workspaceId?: string;
+      relativePath?: string;
+      notebookId?: string;
+    }) => {
       logger.info('[useNoteAPI.createNote] Called with:', {
         title: data.title,
         folderPath: data.folderPath,
         contentLength: data.content?.length || 0,
+        workspaceId: data.workspaceId,
       });
       setLoading(true);
       setError(null);
@@ -85,6 +93,9 @@ export function useNoteAPI() {
           title: data.title,
           content: data.content,
           folderPath: data.folderPath,
+          workspaceId: data.workspaceId,
+          relativePath: data.relativePath,
+          notebookId: data.notebookId,
         });
         logger.info('[useNoteAPI.createNote] Response:', {
           success: response.success,

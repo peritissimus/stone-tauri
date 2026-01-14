@@ -72,28 +72,44 @@ impl NoteUseCasesImpl {
 impl NoteUseCases for NoteUseCasesImpl {
     /// Create a new note
     async fn create_note(&self, input: CreateNoteInput) -> DomainResult<Note> {
-        // Get active workspace for file path resolution
+        // Resolve workspace: use provided workspace_id or fall back to active
+        let workspace_id = if let Some(ref ws_id) = input.workspace_id {
+            Some(ws_id.clone())
+        } else {
+            self.workspace_repository
+                .find_active()
+                .await?
+                .map(|ws| ws.id)
+        }
+        .ok_or_else(|| DomainError::ValidationError("No active workspace".to_string()))?;
+
         let workspace = self
             .workspace_repository
-            .find_active()
+            .find_by_id(&workspace_id)
             .await?
-            .ok_or_else(|| DomainError::ValidationError("No active workspace".to_string()))?;
+            .ok_or_else(|| DomainError::ValidationError("Workspace not found".to_string()))?;
 
         // Create domain entity
-        let mut note = Note::new(&input.title, input.workspace_id.or(Some(workspace.id.clone())))?;
+        let mut note = Note::new(&input.title, Some(workspace_id.clone()))?;
 
         if let Some(notebook_id) = input.notebook_id {
             note.move_to_notebook(Some(notebook_id));
         }
 
         // Determine folder path (default to 'Personal')
-        let folder_path = "Personal";
+        let folder_path = input
+            .folder_path
+            .clone()
+            .unwrap_or_else(|| "Personal".to_string());
 
-        // Generate filename
+        // Generate filename unless provided as relative_path
         let filename = format!("{}.md", chrono::Utc::now().format("%Y%m%d-%H%M%S-%3f"));
 
         // Construct relative path: folderPath/filename.md
-        let relative_path = format!("{}/{}", folder_path, filename);
+        let relative_path = input
+            .relative_path
+            .clone()
+            .unwrap_or_else(|| format!("{}/{}", folder_path, filename));
         note.set_file_path(Some(relative_path.clone()))?;
 
         // Construct absolute path for file operations

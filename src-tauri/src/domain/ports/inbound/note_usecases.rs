@@ -13,10 +13,10 @@ use crate::domain::{entities::Note, errors::DomainResult};
 pub struct CreateNoteInput {
     pub title: String,
     pub content: Option<String>,
-    #[serde(alias = "notebookId")]
     pub notebook_id: Option<String>,
-    #[serde(alias = "folderPath")]
     pub workspace_id: Option<String>,
+    pub folder_path: Option<String>,
+    pub relative_path: Option<String>,
 }
 
 /// Input for updating a note

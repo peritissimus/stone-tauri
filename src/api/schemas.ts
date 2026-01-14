@@ -227,20 +227,24 @@ export const FileTreeNodeSchema: z.ZodType<any> = z.lazy(() =>
   z.object({
     name: z.string(),
     path: z.string(),
+    relativePath: z.string(),
     type: z.enum(['file', 'folder']),
-    children: z.array(FileTreeNodeSchema).optional(),
+    children: z.array(FileTreeNodeSchema).nullable().optional(),
     noteId: z.string().optional(),
   }),
 );
 
 export const ScanWorkspaceResponseSchema = z.object({
-  files: z.array(z.object({
-    path: z.string(),
-    noteId: z.string().optional(),
-  })),
+  files: z.array(
+    z.object({
+      path: z.string(),
+      relativePath: z.string(),
+      noteId: z.string().optional(),
+    }),
+  ),
   structure: z.array(FileTreeNodeSchema),
   total: z.number(),
-  counts: z.record(z.string(), z.number()).optional(),
+  counts: z.record(z.string(), z.number()),
 });
 
 // ============================================================================

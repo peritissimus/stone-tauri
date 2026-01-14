@@ -16,7 +16,7 @@ export interface FileTreeNode {
   name: string;
   path: string;
   type: 'file' | 'folder';
-  children?: FileTreeNode[];
+  children?: FileTreeNode[] | null;
   noteId?: string;
 }
 
@@ -38,31 +38,19 @@ export const workspaceAPI = {
   },
 
   /**
-   * Create a new workspace
+   * Set the active workspace
    */
-  create: async (data: { name: string; path: string }): Promise<IpcResponse<Workspace>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.CREATE, {
-      request: { name: data.name, folderPath: data.path, setActive: true },
-    });
-    return validateResponse(response, WorkspaceSchema);
-  },
-
-  /**
-   * Update a workspace
-   */
-  update: async (id: string, data: Partial<{ name: string }>): Promise<IpcResponse<Workspace>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.UPDATE, {
-      request: { id, ...data },
-    });
+  setActive: async (id: string): Promise<IpcResponse<Workspace>> => {
+    const response = await invokeIpc(WORKSPACE_COMMANDS.SET_ACTIVE, { id });
     return validateResponse(response, WorkspaceSchema);
   },
 
   /**
    * Create a new workspace
    */
-  create: async (data: { name: string; path: string }): Promise<IpcResponse<Workspace>> => {
+  create: async (data: { name: string; path: string; setActive?: boolean }): Promise<IpcResponse<Workspace>> => {
     const response = await invokeIpc(WORKSPACE_COMMANDS.CREATE, {
-      request: { name: data.name, folderPath: data.path, setActive: true },
+      request: { name: data.name, folderPath: data.path, setActive: data.setActive ?? true },
     });
     return validateResponse(response, WorkspaceSchema);
   },
@@ -101,19 +89,22 @@ export const workspaceAPI = {
         path: string;
         relativePath: string;
         type: 'file' | 'folder';
-        children?: any[];
+        children?: any[] | null;
       }>;
-      counts?: Record<string, number>;
+      counts: Record<string, number>;
+      total: number;
     }>
   > => {
     const response = await invokeIpc(WORKSPACE_COMMANDS.SCAN, { workspace_id: workspaceId });
     return validateResponse(
       response,
       z.object({
-        files: z.array(z.object({
-          path: z.string(),
-          relativePath: z.string(),
-        })),
+        files: z.array(
+          z.object({
+            path: z.string(),
+            relativePath: z.string(),
+          }),
+        ),
         structure: z.array(
           z.object({
             name: z.string(),
@@ -123,7 +114,8 @@ export const workspaceAPI = {
             children: z.array(z.any()).nullable().optional(),
           }),
         ),
-        counts: z.record(z.number()).optional(),
+        counts: z.record(z.number()),
+        total: z.number(),
       }),
     );
   },
@@ -181,161 +173,6 @@ export const workspaceAPI = {
   },
 
   /**
-   * Move a folder
-   */
-  moveFolder: async (
-    sourcePath: string,
-    destinationPath: string | null,
-  ): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.MOVE_FOLDER, {
-      request: { sourcePath, destinationPath },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Open folder selection dialog
-   */
-  selectFolder: async (): Promise<IpcResponse<{ canceled?: boolean; folderPath?: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.SELECT_FOLDER, { request: null });
-    return validateResponse(
-      response,
-      z.object({ canceled: z.boolean().optional(), folderPath: z.string().optional() }),
-    );
-  },
-
-  /**
-   * Sync workspace with filesystem
-   */
-  sync: async (
-    workspaceId?: string,
-  ): Promise<
-    IpcResponse<{
-      workspaceId: string;
-      notebooks: { created: number; updated: number; errors: string[] };
-      notes: { created: number; updated: number; deleted: number; errors: string[] };
-    }>
-  > => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.SYNC, { workspace_id: workspaceId });
-    return validateResponse(
-      response,
-      z.object({
-        workspaceId: z.string(),
-        notebooks: z.object({
-          created: z.number(),
-          updated: z.number(),
-          errors: z.array(z.string()),
-        }),
-        notes: z.object({
-          created: z.number(),
-          updated: z.number(),
-          deleted: z.number(),
-          errors: z.array(z.string()),
-        }),
-      }),
-    );
-  },
-
-  /**
-   * Create a folder in the workspace
-   */
-  createFolder: async (name: string, parentPath?: string): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.CREATE_FOLDER, {
-      request: { name, parentPath },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Rename a folder
-   */
-  renameFolder: async (path: string, name: string): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.RENAME_FOLDER, {
-      request: { path, name },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Move a folder
-   */
-  moveFolder: async (
-    sourcePath: string,
-    destinationPath: string | null,
-  ): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.MOVE_FOLDER, {
-      request: { sourcePath, destinationPath },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Open folder selection dialog
-   */
-  selectFolder: async (): Promise<IpcResponse<{ canceled?: boolean; folderPath?: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.SELECT_FOLDER, { request: null });
-    return validateResponse(
-      response,
-      z.object({ canceled: z.boolean().optional(), folderPath: z.string().optional() }),
-    );
-  },
-
-  /**
-   * Create a folder in the workspace
-   */
-  createFolder: async (name: string, parentPath?: string): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.CREATE_FOLDER, {
-      request: { name, parentPath },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Rename a folder
-   */
-  renameFolder: async (path: string, name: string): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.RENAME_FOLDER, {
-      request: { path, name },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Move a folder
-   */
-  moveFolder: async (
-    sourcePath: string,
-    destinationPath: string | null,
-  ): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.MOVE_FOLDER, {
-      request: { sourcePath, destinationPath },
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
-   * Open folder selection dialog
-   */
-  selectFolder: async (): Promise<IpcResponse<{ canceled?: boolean; folderPath?: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.SELECT_FOLDER, { request: null });
-    return validateResponse(
-      response,
-      z.object({ canceled: z.boolean().optional(), folderPath: z.string().optional() }),
-    );
-  },
-
-  /**
-   * Rename a folder
-   */
-  renameFolder: async (path: string, name: string): Promise<IpcResponse<{ folderPath: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.RENAME_FOLDER, {
-      path,
-      name,
-    });
-    return validateResponse(response, z.object({ folderPath: z.string() }));
-  },
-
-  /**
    * Delete a folder
    */
   deleteFolder: async (path: string): Promise<IpcResponse<{ success: boolean }>> => {
@@ -351,8 +188,7 @@ export const workspaceAPI = {
     destinationPath: string | null,
   ): Promise<IpcResponse<{ folderPath: string }>> => {
     const response = await invokeIpc(WORKSPACE_COMMANDS.MOVE_FOLDER, {
-      sourcePath,
-      destinationPath,
+      request: { sourcePath, destinationPath },
     });
     return validateResponse(response, z.object({ folderPath: z.string() }));
   },
@@ -369,10 +205,11 @@ export const workspaceAPI = {
    * Open folder selection dialog
    */
   selectFolder: async (): Promise<IpcResponse<{ canceled?: boolean; folderPath?: string }>> => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.SELECT_FOLDER, {});
+    const response = await invokeIpc(WORKSPACE_COMMANDS.SELECT_FOLDER, { request: null });
     return validateResponse(
       response,
       z.object({ canceled: z.boolean().optional(), folderPath: z.string().optional() }),
     );
   },
 };
+
