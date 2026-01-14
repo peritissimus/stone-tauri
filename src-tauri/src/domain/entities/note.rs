@@ -21,6 +21,7 @@ pub struct Note {
     pub is_archived: bool,
     pub is_deleted: bool,
     pub deleted_at: Option<DateTime<Utc>>,
+    pub embedding: Option<Vec<f32>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -57,6 +58,7 @@ impl Note {
             is_archived: false,
             is_deleted: false,
             deleted_at: None,
+            embedding: None,
             created_at: now,
             updated_at: now,
         })

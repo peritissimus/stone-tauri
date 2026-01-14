@@ -37,5 +37,5 @@ pub use git_service_impl::Git2Service;
 pub use event_publisher_impl::TokioEventPublisher;
 pub use file_watcher_impl::NotifyFileWatcher;
 pub use search_service::StubSearchService;
-pub use embedding_service_impl::StubEmbeddingService;
+pub use embedding_service_impl::FastEmbedService;
 pub use export_service_impl::StubExportService;

@@ -32,6 +32,8 @@ pub trait ExportUseCases: Send + Sync {
     async fn export_html(
         &self,
         note_id: &str,
+        rendered_html: Option<String>,
+        title: Option<String>,
         options: Option<ExportOptions>,
     ) -> DomainResult<ExportResult>;
 
@@ -39,6 +41,8 @@ pub trait ExportUseCases: Send + Sync {
     async fn export_pdf(
         &self,
         note_id: &str,
+        rendered_html: Option<String>,
+        title: Option<String>,
         options: Option<ExportOptions>,
     ) -> DomainResult<ExportResult>;
 

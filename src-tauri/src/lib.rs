@@ -28,7 +28,7 @@ use adapters::inbound::{
     attachment_commands, database_commands, export_commands, git_commands, graph_commands,
     note_commands, notebook_commands, quick_capture_commands, search_commands, settings_commands,
     system_commands, tag_commands, task_commands, topic_commands, version_commands,
-    workspace_commands,
+    workspace_commands, performance_commands,
 };
 
 /// Initialize the application
@@ -91,6 +91,7 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
     // Register app state
     app.manage(container.app_state);
     app.manage(db_manager);
+    app.manage(performance_commands::PerformanceState::new());
 
     tracing::info!("Application initialized successfully");
 
@@ -140,6 +141,7 @@ pub fn run() {
             workspace_commands::update_workspace,
             workspace_commands::delete_workspace,
             workspace_commands::scan_workspace,
+            workspace_commands::sync_workspace,
             // Notebook commands
             notebook_commands::create_notebook,
             notebook_commands::get_notebook,
@@ -178,6 +180,8 @@ pub fn run() {
             // Git commands
             git_commands::git_init,
             git_commands::git_commit,
+            git_commands::git_pull,
+            git_commands::git_push,
             git_commands::git_sync,
             git_commands::get_git_status,
             git_commands::git_get_history,
@@ -219,6 +223,14 @@ pub fn run() {
             version_commands::get_version,
             version_commands::create_version,
             version_commands::restore_version,
+            // Performance commands
+            performance_commands::get_performance_snapshot,
+            performance_commands::get_memory_metrics,
+            performance_commands::get_cpu_metrics,
+            performance_commands::get_ipc_stats,
+            performance_commands::get_db_stats,
+            performance_commands::get_startup_metrics,
+            performance_commands::clear_performance_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

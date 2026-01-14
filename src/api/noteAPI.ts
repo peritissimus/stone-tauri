@@ -5,18 +5,13 @@
  * Pure functions that wrap IPC channels. No React, no stores.
  */
 
+import { z } from 'zod';
 import { invokeIpc } from '../lib/tauri-ipc';
 import { NOTE_COMMANDS } from '../constants/tauriCommands';
 import type { Note, IpcResponse, TodoItem } from '../types';
 import type { NoteFilters, GraphData as SpecGraphData } from '@/specs';
 import { validateResponse } from './validation';
-import {
-  NoteSchema,
-  NoteWithMetaSchema,
-  TodoItemSchema,
-  GraphDataSchema,
-} from './schemas';
-import { z } from 'zod';
+import { NoteSchema, NoteWithMetaSchema, TodoItemSchema, GraphDataSchema } from './schemas';
 
 // Re-export types aligned with specs
 export type GetAllNotesParams = NoteFilters;
@@ -71,7 +66,7 @@ export const noteAPI = {
     notebookId?: string;
     folderPath?: string;
   }): Promise<IpcResponse<Note>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.CREATE, data);
+    const response = await invokeIpc(NOTE_COMMANDS.CREATE, { input: data });
     return validateResponse(response, NoteSchema);
   },
 
@@ -87,7 +82,9 @@ export const noteAPI = {
     }>,
     silent?: boolean,
   ): Promise<IpcResponse<Note>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.UPDATE, { id, ...data, silent });
+    const response = await invokeIpc(NOTE_COMMANDS.UPDATE, {
+      input: { id, ...data, silent },
+    });
     return validateResponse(response, NoteSchema);
   },
 
@@ -147,7 +144,11 @@ export const noteAPI = {
     taskIndex: number,
     newState: string,
   ): Promise<IpcResponse<void>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.UPDATE_TASK_STATE, { noteId, taskIndex, newState });
+    const response = await invokeIpc(NOTE_COMMANDS.UPDATE_TASK_STATE, {
+      noteId,
+      taskIndex,
+      newState,
+    });
     return validateResponse(response, z.void());
   },
 
@@ -191,30 +192,59 @@ export const noteAPI = {
     depth?: number;
     includeOrphans?: boolean;
   }): Promise<IpcResponse<GraphData>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.GET_GRAPH_DATA, { includeOrphans: true, ...options });
+    const response = await invokeIpc(NOTE_COMMANDS.GET_GRAPH_DATA, {
+      includeOrphans: true,
+      ...options,
+    });
     return validateResponse(response, GraphDataSchema);
   },
 
   /**
    * Export note as HTML
+   * @param id - Note ID
+   * @param renderedHtml - Pre-rendered HTML content (includes fonts, diagrams, and styles)
+   * @param title - Note title for filename
    */
-  exportHtml: async (id: string): Promise<IpcResponse<{ html: string; path: string }>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.EXPORT_HTML, { id });
+  exportHtml: async (
+    id: string,
+    renderedHtml?: string,
+    title?: string,
+  ): Promise<IpcResponse<{ html: string; path: string }>> => {
+    const response = await invokeIpc(NOTE_COMMANDS.EXPORT_HTML, {
+      id,
+      renderedHtml,
+      title,
+    });
     return validateResponse(response, z.object({ html: z.string(), path: z.string() }));
   },
 
   /**
    * Export note as PDF
+   * @param id - Note ID
+   * @param renderedHtml - Pre-rendered HTML content from the editor (with diagrams, styles, etc.)
+   * @param title - Note title for filename
    */
-  exportPdf: async (id: string): Promise<IpcResponse<{ path: string }>> => {
-    const response = await invokeIpc(NOTE_COMMANDS.EXPORT_PDF, { id });
+  exportPdf: async (
+    id: string,
+    renderedHtml?: string,
+    title?: string,
+  ): Promise<IpcResponse<{ path: string }>> => {
+    const response = await invokeIpc(NOTE_COMMANDS.EXPORT_PDF, {
+      id,
+      renderedHtml,
+      title,
+    });
     return validateResponse(response, z.object({ path: z.string() }));
   },
 
   /**
    * Export note as Markdown
    */
-  exportMarkdown: async (id: string): Promise<IpcResponse<{ markdown: string; path: string }>> => {
+  exportMarkdown: async (
+    id: string,
+    _title?: string,
+  ): Promise<IpcResponse<{ markdown: string; path: string }>> => {
+    // Note: title is not used in backend yet, but kept for API consistency
     const response = await invokeIpc(NOTE_COMMANDS.EXPORT_MARKDOWN, { id });
     return validateResponse(response, z.object({ markdown: z.string(), path: z.string() }));
   },

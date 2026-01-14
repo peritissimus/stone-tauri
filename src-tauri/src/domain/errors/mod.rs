@@ -45,6 +45,9 @@ pub enum DomainError {
 
     #[error("Resource not found: {0}")]
     NotFound(String),
+
+    #[error("Internal error: {0}")]
+    InternalError(String),
 }
 
 pub type DomainResult<T> = Result<T, DomainError>;

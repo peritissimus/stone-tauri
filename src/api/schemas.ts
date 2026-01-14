@@ -240,7 +240,7 @@ export const ScanWorkspaceResponseSchema = z.object({
   })),
   structure: z.array(FileTreeNodeSchema),
   total: z.number(),
-  counts: z.record(z.number()).optional(),
+  counts: z.record(z.string(), z.number()).optional(),
 });
 
 // ============================================================================
@@ -251,7 +251,7 @@ export const GraphNodeSchema = z.object({
   id: z.string(),
   label: z.string(),
   type: z.enum(['note', 'notebook', 'tag', 'topic']),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const GraphLinkSchema = z.object({
@@ -303,4 +303,112 @@ export const ClassifyAllResponseSchema = z.object({
   processed: z.number(),
   total: z.number(),
   failed: z.number(),
+});
+
+// ============================================================================
+// Performance Schemas
+// ============================================================================
+
+export const StartupMetricsSchema = z.object({
+  appStartTime: z.number(),
+  dbInitTime: z.number().optional(),
+  containerInitTime: z.number().optional(),
+  ipcRegistrationTime: z.number().optional(),
+  windowCreationTime: z.number().optional(),
+  totalStartupTime: z.number().optional(),
+  windowReadyTime: z.number().optional(),
+});
+
+export const MemoryMetricsSchema = z.object({
+  heapUsed: z.number(),
+  heapTotal: z.number(),
+  external: z.number(),
+  rss: z.number(),
+  arrayBuffers: z.number(),
+  heapUsedMB: z.number(),
+  rssMB: z.number(),
+});
+
+export const CPUMetricsSchema = z.object({
+  user: z.number(),
+  system: z.number(),
+  percentCPU: z.number(),
+});
+
+export const EventLoopMetricsSchema = z.object({
+  lagMs: z.number(),
+  utilizationPercent: z.number(),
+});
+
+export const ChannelStatsSchema = z.object({
+  calls: z.number(),
+  errors: z.number(),
+  totalDurationMs: z.number(),
+  avgDurationMs: z.number(),
+  minDurationMs: z.number(),
+  maxDurationMs: z.number(),
+});
+
+export const IPCMetricsSchema = z.object({
+  totalCalls: z.number(),
+  totalErrors: z.number(),
+  avgDurationMs: z.number(),
+  p50DurationMs: z.number(),
+  p95DurationMs: z.number(),
+  p99DurationMs: z.number(),
+  callsByChannel: z.record(z.string(), ChannelStatsSchema),
+});
+
+export const OperationStatsSchema = z.object({
+  count: z.number(),
+  errors: z.number(),
+  totalDurationMs: z.number(),
+  avgDurationMs: z.number(),
+  minDurationMs: z.number(),
+  maxDurationMs: z.number(),
+});
+
+export const DatabaseMetricsSchema = z.object({
+  totalQueries: z.number(),
+  totalErrors: z.number(),
+  avgDurationMs: z.number(),
+  slowQueries: z.number(),
+  queriesByOperation: z.record(z.string(), OperationStatsSchema),
+});
+
+export const RendererMemoryMetricsSchema = z.object({
+  usedJSHeapSize: z.number(),
+  totalJSHeapSize: z.number(),
+  jsHeapSizeLimit: z.number(),
+});
+
+export const RendererNavigationMetricsSchema = z.object({
+  domContentLoaded: z.number(),
+  loadComplete: z.number(),
+  domInteractive: z.number(),
+});
+
+export const LongTaskEntrySchema = z.object({
+  name: z.string(),
+  startTime: z.number(),
+  duration: z.number(),
+});
+
+export const RendererMetricsSchema = z.object({
+  memory: RendererMemoryMetricsSchema,
+  navigation: RendererNavigationMetricsSchema,
+  fps: z.number().nullable(),
+  longTasks: z.array(LongTaskEntrySchema),
+});
+
+export const PerformanceSnapshotSchema = z.object({
+  timestamp: z.number(),
+  uptime: z.number(),
+  startup: StartupMetricsSchema,
+  memory: MemoryMetricsSchema,
+  cpu: CPUMetricsSchema,
+  eventLoop: EventLoopMetricsSchema,
+  ipc: IPCMetricsSchema,
+  database: DatabaseMetricsSchema,
+  renderer: RendererMetricsSchema.nullable().optional(),
 });

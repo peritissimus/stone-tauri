@@ -102,14 +102,14 @@ export const InputModal = React.forwardRef<HTMLDivElement, InputModalProps>(
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent ref={ref} className="sm:max-w-[425px]" {...props}>
-          {(left || right) && (
-            <DialogHeader>
-              <div className="flex items-center justify-between">
-                {left && <DialogTitle className="flex-1">{left}</DialogTitle>}
-                {right && <div className="flex items-center gap-2">{right}</div>}
-              </div>
-            </DialogHeader>
-          )}
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className={cn("flex-1", !left && "sr-only")}>
+                {left || "Input Modal"}
+              </DialogTitle>
+              {right && <div className="flex items-center gap-2">{right}</div>}
+            </div>
+          </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className={cn('py-4', sizePaddingClasses[size])}>
               <Input

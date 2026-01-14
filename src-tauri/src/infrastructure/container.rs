@@ -46,7 +46,7 @@ impl Container {
         let system_service = Arc::new(TauriSystemService::new(app_handle.clone()));
         let git_service = Arc::new(Git2Service::new());
         let search_engine = Arc::new(StubSearchService::new(pool.clone()));
-        let embedding_service = Arc::new(StubEmbeddingService::new());
+        let embedding_service = Arc::new(FastEmbedService::new(note_repository.clone()));
         let export_service = Arc::new(StubExportService::new());
         let database_path = std::env::var("STONE_DB_PATH")
             .unwrap_or_else(|_| "stone.db".to_string());

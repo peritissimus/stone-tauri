@@ -68,6 +68,8 @@ regex = "1.12.2"
 dirs = "5.0"
 
 mime_guess = "2.0"
+sysinfo = "0.37.2"
+fastembed = "5.8.1"
 
 [dev-dependencies]
 tempfile = "3.13"

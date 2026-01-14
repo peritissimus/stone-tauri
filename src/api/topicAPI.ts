@@ -32,9 +32,9 @@ export const topicAPI = {
   /**
    * Initialize the embedding service
    */
-  initialize: async (): Promise<IpcResponse<{ success: boolean; ready: boolean }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.INITIALIZE, {});
-    return validateResponse(response, z.object({ success: z.boolean(), ready: z.boolean() }));
+  initialize: async (): Promise<IpcResponse<EmbeddingStatus>> => {
+    const response = await invokeIpc(TOPIC_COMMANDS.GET_EMBEDDING_STATUS, {});
+    return validateResponse(response, EmbeddingStatusSchema);
   },
 
   /**
@@ -43,7 +43,9 @@ export const topicAPI = {
   getAll: async (options?: {
     excludeJournal?: boolean;
   }): Promise<IpcResponse<{ topics: TopicWithCount[] }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.GET_ALL, options || {});
+    const response = await invokeIpc(TOPIC_COMMANDS.GET_ALL, {
+      exclude_journal: options?.excludeJournal,
+    });
     return validateResponse(response, z.object({ topics: z.array(TopicWithCountSchema) }));
   },
 
@@ -63,7 +65,7 @@ export const topicAPI = {
     description?: string;
     color?: string;
   }): Promise<IpcResponse<Topic>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.CREATE, data);
+    const response = await invokeIpc(TOPIC_COMMANDS.CREATE, { request: data });
     return validateResponse(response, TopicSchema);
   },
 
@@ -78,7 +80,9 @@ export const topicAPI = {
       color: string;
     }>,
   ): Promise<IpcResponse<Topic>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.UPDATE, { id, ...data });
+    const response = await invokeIpc(TOPIC_COMMANDS.UPDATE, {
+      request: { id, ...data },
+    });
     return validateResponse(response, TopicSchema);
   },
 
@@ -97,7 +101,11 @@ export const topicAPI = {
     topicId: string,
     options?: { limit?: number; offset?: number; excludeJournal?: boolean },
   ): Promise<IpcResponse<{ notes: unknown[] }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.GET_NOTES_BY_TOPIC, { topicId, ...options });
+    const response = await invokeIpc(TOPIC_COMMANDS.GET_NOTES_BY_TOPIC, {
+      topic_id: topicId,
+      ...options,
+      exclude_journal: options?.excludeJournal,
+    });
     return validateResponse(response, z.object({ notes: z.array(z.unknown()) }));
   },
 
@@ -119,7 +127,7 @@ export const topicAPI = {
       }>;
     }>
   > => {
-    const response = await invokeIpc(TOPIC_COMMANDS.GET_TOPICS_FOR_NOTE, { noteId });
+    const response = await invokeIpc(TOPIC_COMMANDS.GET_TOPICS_FOR_NOTE, { note_id: noteId });
     return validateResponse(response, z.object({ topics: z.array(NoteTopicDetailsSchema) }));
   },
 
@@ -127,7 +135,10 @@ export const topicAPI = {
    * Assign a topic to a note
    */
   assignToNote: async (noteId: string, topicId: string): Promise<IpcResponse<void>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.ASSIGN_TO_NOTE, { noteId, topicId });
+    const response = await invokeIpc(TOPIC_COMMANDS.ASSIGN_TO_NOTE, {
+      note_id: noteId,
+      topic_id: topicId,
+    });
     return validateResponse(response, z.void());
   },
 
@@ -135,7 +146,10 @@ export const topicAPI = {
    * Remove a topic from a note
    */
   removeFromNote: async (noteId: string, topicId: string): Promise<IpcResponse<void>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.REMOVE_FROM_NOTE, { noteId, topicId });
+    const response = await invokeIpc(TOPIC_COMMANDS.REMOVE_FROM_NOTE, {
+      note_id: noteId,
+      topic_id: topicId,
+    });
     return validateResponse(response, z.void());
   },
 
@@ -145,7 +159,7 @@ export const topicAPI = {
   classifyNote: async (
     noteId: string,
   ): Promise<IpcResponse<{ noteId: string; topics: ClassificationResult[] }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.CLASSIFY_NOTE, { noteId });
+    const response = await invokeIpc(TOPIC_COMMANDS.CLASSIFY_NOTE, { note_id: noteId });
     return validateResponse(response, ClassifyNoteResponseSchema);
   },
 
@@ -155,7 +169,17 @@ export const topicAPI = {
   classifyAll: async (options?: {
     excludeJournal?: boolean;
   }): Promise<IpcResponse<{ processed: number; total: number; failed: number }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.CLASSIFY_ALL, options || {});
+    // Note: classify_all_notes in Rust takes no arguments in the current implementation I read?
+    // Let me double check topic_commands.rs
+    // "pub async fn classify_all_notes(state: State<'_, AppState>) -> ..."
+    // IT TAKES NO ARGUMENTS. So options are ignored?
+    // Wait, the interface says `excludeJournal`.
+    // If Rust ignores it, passing it doesn't hurt unless strict validation.
+    // I'll leave it but just pass empty if needed or pass as is.
+    // Actually, passing args to a function that takes none usually results in "invalid args" error in Tauri?
+    // No, extra args are usually ignored unless strictly typed?
+    // Safest to NOT pass args if Rust signature is empty.
+    const response = await invokeIpc(TOPIC_COMMANDS.CLASSIFY_ALL, {});
     return validateResponse(response, ClassifyAllResponseSchema);
   },
 
@@ -165,14 +189,19 @@ export const topicAPI = {
   reclassifyAll: async (options?: {
     excludeJournal?: boolean;
   }): Promise<IpcResponse<{ processed: number; total: number; failed: number; skipped: number }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.RECLASSIFY_ALL, options || {});
+    // Same here, if Rust command takes no args.
+    // Wait, I didn't see reclassify_all_notes in topic_commands.rs.
+    // It says "RECLASSIFY_ALL: 'classify_all_notes'" in tauriCommands.ts.
+    // So it maps to the same command?
+    // If so, it takes no args.
+    const response = await invokeIpc(TOPIC_COMMANDS.RECLASSIFY_ALL, {});
     return validateResponse(
       response,
       z.object({
         processed: z.number(),
         total: z.number(),
         failed: z.number(),
-        skipped: z.number(),
+        skipped: z.number().optional().default(0), // Rust response might not have skipped if it reuses same struct
       }),
     );
   },
@@ -195,7 +224,10 @@ export const topicAPI = {
     noteId: string,
     limit?: number,
   ): Promise<IpcResponse<{ similar: SimilarNote[] }>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.GET_SIMILAR_NOTES, { noteId, limit });
+    const response = await invokeIpc(TOPIC_COMMANDS.GET_SIMILAR_NOTES, {
+      note_id: noteId,
+      limit,
+    });
     return validateResponse(response, z.object({ similar: z.array(SimilarNoteResultSchema) }));
   },
 

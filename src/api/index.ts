@@ -54,3 +54,7 @@ export type { GitStatus, GitCommitResult, GitSyncResult, GitCommit } from './git
 
 // Quick Capture API
 export { quickCaptureAPI } from './quickCaptureAPI';
+
+// Performance API
+export { performanceAPI } from './performanceAPI';
+export type { PerformanceSnapshot } from './performanceAPI';

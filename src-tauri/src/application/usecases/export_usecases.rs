@@ -59,6 +59,8 @@ impl ExportUseCases for ExportUseCasesImpl {
     async fn export_html(
         &self,
         note_id: &str,
+        rendered_html: Option<String>,
+        title: Option<String>,
         options: Option<ExportOptions>,
     ) -> DomainResult<ExportResult> {
         // Find the note
@@ -68,39 +70,44 @@ impl ExportUseCases for ExportUseCasesImpl {
             .await?
             .ok_or_else(|| DomainError::NoteNotFound(note_id.to_string()))?;
 
-        // Validate required fields
-        let file_path = note
-            .file_path
-            .as_ref()
-            .ok_or_else(|| DomainError::ValidationError("Note has no file path".to_string()))?;
+        // If rendered HTML is provided, use it directly (wrapping it in a document)
+        let html_content = if let Some(html) = rendered_html {
+            html
+        } else {
+            // Validate required fields
+            let file_path = note
+                .file_path
+                .as_ref()
+                .ok_or_else(|| DomainError::ValidationError("Note has no file path".to_string()))?;
 
-        let workspace_id = note
-            .workspace_id
-            .as_ref()
-            .ok_or_else(|| DomainError::ValidationError("Note has no workspace ID".to_string()))?;
+            let workspace_id = note
+                .workspace_id
+                .as_ref()
+                .ok_or_else(|| DomainError::ValidationError("Note has no workspace ID".to_string()))?;
 
-        // Find the workspace
-        let workspace = self
-            .workspace_repository
-            .find_by_id(workspace_id)
-            .await?
-            .ok_or_else(|| DomainError::WorkspaceNotFound(workspace_id.to_string()))?;
+            // Find the workspace
+            let workspace = self
+                .workspace_repository
+                .find_by_id(workspace_id)
+                .await?
+                .ok_or_else(|| DomainError::WorkspaceNotFound(workspace_id.to_string()))?;
 
-        // Construct absolute path
-        let absolute_path = Path::new(&workspace.folder_path)
-            .join(file_path)
-            .to_string_lossy()
-            .to_string();
+            // Construct absolute path
+            let absolute_path = Path::new(&workspace.folder_path)
+                .join(file_path)
+                .to_string_lossy()
+                .to_string();
 
-        // Read file content
-        let markdown = self
-            .file_storage
-            .read(&absolute_path)
-            .await?
-            .ok_or_else(|| DomainError::ValidationError("Could not read note content".to_string()))?;
+            // Read file content
+            let markdown = self
+                .file_storage
+                .read(&absolute_path)
+                .await?
+                .ok_or_else(|| DomainError::ValidationError("Could not read note content".to_string()))?;
 
-        // Convert markdown to HTML
-        let html = self.markdown_processor.markdown_to_html(&markdown).await?;
+            // Convert markdown to HTML
+            self.markdown_processor.markdown_to_html(&markdown).await?
+        };
 
         // Determine theme
         let theme = options
@@ -111,7 +118,7 @@ impl ExportUseCases for ExportUseCasesImpl {
 
         // Generate full HTML document
         let html_options = HtmlOptions {
-            title: Some(note.title.clone()),
+            title: title.or(Some(note.title.clone())),
             theme: Some(theme),
             include_styles: Some(true),
             custom_css: None,
@@ -119,7 +126,7 @@ impl ExportUseCases for ExportUseCasesImpl {
 
         let full_html = self
             .export_service
-            .generate_html_document(&html, Some(html_options))?;
+            .generate_html_document(&html_content, Some(html_options))?;
 
         // Generate filename
         let filename = format!(
@@ -140,6 +147,8 @@ impl ExportUseCases for ExportUseCasesImpl {
     async fn export_pdf(
         &self,
         note_id: &str,
+        rendered_html: Option<String>,
+        title: Option<String>,
         options: Option<ExportOptions>,
     ) -> DomainResult<ExportResult> {
         // Check if PDF export is available
@@ -156,39 +165,44 @@ impl ExportUseCases for ExportUseCasesImpl {
             .await?
             .ok_or_else(|| DomainError::NoteNotFound(note_id.to_string()))?;
 
-        // Validate required fields
-        let file_path = note
-            .file_path
-            .as_ref()
-            .ok_or_else(|| DomainError::ValidationError("Note has no file path".to_string()))?;
+        // If rendered HTML is provided, use it directly (wrapping it in a document)
+        let html_content = if let Some(html) = rendered_html {
+            html
+        } else {
+            // Validate required fields
+            let file_path = note
+                .file_path
+                .as_ref()
+                .ok_or_else(|| DomainError::ValidationError("Note has no file path".to_string()))?;
 
-        let workspace_id = note
-            .workspace_id
-            .as_ref()
-            .ok_or_else(|| DomainError::ValidationError("Note has no workspace ID".to_string()))?;
+            let workspace_id = note
+                .workspace_id
+                .as_ref()
+                .ok_or_else(|| DomainError::ValidationError("Note has no workspace ID".to_string()))?;
 
-        // Find the workspace
-        let workspace = self
-            .workspace_repository
-            .find_by_id(workspace_id)
-            .await?
-            .ok_or_else(|| DomainError::WorkspaceNotFound(workspace_id.to_string()))?;
+            // Find the workspace
+            let workspace = self
+                .workspace_repository
+                .find_by_id(workspace_id)
+                .await?
+                .ok_or_else(|| DomainError::WorkspaceNotFound(workspace_id.to_string()))?;
 
-        // Construct absolute path
-        let absolute_path = Path::new(&workspace.folder_path)
-            .join(file_path)
-            .to_string_lossy()
-            .to_string();
+            // Construct absolute path
+            let absolute_path = Path::new(&workspace.folder_path)
+                .join(file_path)
+                .to_string_lossy()
+                .to_string();
 
-        // Read file content
-        let markdown = self
-            .file_storage
-            .read(&absolute_path)
-            .await?
-            .ok_or_else(|| DomainError::ValidationError("Could not read note content".to_string()))?;
+            // Read file content
+            let markdown = self
+                .file_storage
+                .read(&absolute_path)
+                .await?
+                .ok_or_else(|| DomainError::ValidationError("Could not read note content".to_string()))?;
 
-        // Convert markdown to HTML
-        let html = self.markdown_processor.markdown_to_html(&markdown).await?;
+            // Convert markdown to HTML
+            self.markdown_processor.markdown_to_html(&markdown).await?
+        };
 
         // Determine theme
         let theme = options
@@ -199,7 +213,7 @@ impl ExportUseCases for ExportUseCasesImpl {
 
         // Generate full HTML document
         let html_options = HtmlOptions {
-            title: Some(note.title.clone()),
+            title: title.or(Some(note.title.clone())),
             theme: Some(theme),
             include_styles: Some(true),
             custom_css: None,
@@ -207,7 +221,7 @@ impl ExportUseCases for ExportUseCasesImpl {
 
         let full_html = self
             .export_service
-            .generate_html_document(&html, Some(html_options))?;
+            .generate_html_document(&html_content, Some(html_options))?;
 
         // Render to PDF
         let pdf_options = PdfOptions {

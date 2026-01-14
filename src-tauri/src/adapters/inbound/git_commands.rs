@@ -61,6 +61,46 @@ pub async fn git_commit(
 }
 
 #[tauri::command]
+pub async fn git_pull(
+    state: State<'_, AppState>,
+    workspace_id: String,
+) -> Result<GitSyncResponse, String> {
+    let success = state
+        .git_usecases
+        .pull(&workspace_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(GitSyncResponse {
+        success,
+        pulled: 0,
+        pushed: 0,
+        conflicts: vec![],
+        error: None,
+    })
+}
+
+#[tauri::command]
+pub async fn git_push(
+    state: State<'_, AppState>,
+    workspace_id: String,
+) -> Result<GitSyncResponse, String> {
+    let success = state
+        .git_usecases
+        .push(&workspace_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(GitSyncResponse {
+        success,
+        pulled: 0,
+        pushed: 0,
+        conflicts: vec![],
+        error: None,
+    })
+}
+
+#[tauri::command]
 pub async fn git_sync(
     state: State<'_, AppState>,
     workspace_id: String,

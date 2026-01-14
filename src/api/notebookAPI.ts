@@ -38,11 +38,18 @@ export const notebookAPI = {
    */
   create: async (data: {
     name: string;
-    parent_id?: string;
+    parentId?: string;
     icon?: string;
     color?: string;
   }): Promise<IpcResponse<Notebook>> => {
-    const response = await invokeIpc(NOTEBOOK_COMMANDS.CREATE, data);
+    const response = await invokeIpc(NOTEBOOK_COMMANDS.CREATE, {
+      request: {
+        name: data.name,
+        parentId: data.parentId,
+        icon: data.icon,
+        color: data.color,
+      },
+    });
     return validateResponse(response, NotebookSchema);
   },
 
@@ -57,7 +64,9 @@ export const notebookAPI = {
       color: string;
     }>,
   ): Promise<IpcResponse<Notebook>> => {
-    const response = await invokeIpc(NOTEBOOK_COMMANDS.UPDATE, { id, ...data });
+    const response = await invokeIpc(NOTEBOOK_COMMANDS.UPDATE, {
+      request: { id, ...data },
+    });
     return validateResponse(response, NotebookSchema);
   },
 
@@ -65,7 +74,9 @@ export const notebookAPI = {
    * Delete a notebook
    */
   delete: async (id: string, deleteNotes?: boolean): Promise<IpcResponse<void>> => {
-    const response = await invokeIpc(NOTEBOOK_COMMANDS.DELETE, { id, delete_notes: deleteNotes });
+    const response = await invokeIpc(NOTEBOOK_COMMANDS.DELETE, {
+      request: { id, deleteNotes },
+    });
     return validateResponse(response, z.void());
   },
 
@@ -73,7 +84,9 @@ export const notebookAPI = {
    * Move a notebook to a new parent or position
    */
   move: async (id: string, parentId?: string, position?: number): Promise<IpcResponse<void>> => {
-    const response = await invokeIpc(NOTEBOOK_COMMANDS.MOVE, { id, parent_id: parentId, position });
+    const response = await invokeIpc(NOTEBOOK_COMMANDS.MOVE, {
+      request: { id, parentId, position },
+    });
     return validateResponse(response, z.void());
   },
 };

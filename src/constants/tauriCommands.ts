@@ -146,6 +146,17 @@ export const GIT_COMMANDS = {
   GET_COMMITS: 'git_get_history',
 } as const;
 
+// Performance Operations
+export const PERFORMANCE_COMMANDS = {
+  GET_SNAPSHOT: 'get_performance_snapshot',
+  GET_MEMORY: 'get_memory_metrics',
+  GET_CPU: 'get_cpu_metrics',
+  GET_IPC_STATS: 'get_ipc_stats',
+  GET_DB_STATS: 'get_db_stats',
+  GET_STARTUP: 'get_startup_metrics',
+  CLEAR_HISTORY: 'clear_performance_history',
+} as const;
+
 // Quick Capture Operations
 export const QUICK_CAPTURE_COMMANDS = {
   APPEND_TO_JOURNAL: 'append_to_journal',
@@ -234,6 +245,7 @@ export const ALL_COMMANDS = [
   ...Object.values(SETTINGS_COMMANDS),
   ...Object.values(SYSTEM_COMMANDS),
   ...Object.values(GIT_COMMANDS),
+  ...Object.values(PERFORMANCE_COMMANDS),
   ...Object.values(QUICK_CAPTURE_COMMANDS),
 ] as const;
 

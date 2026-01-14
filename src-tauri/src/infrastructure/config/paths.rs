@@ -107,6 +107,18 @@ impl AppPaths {
             return Ok(PathBuf::from(custom_dir));
         }
 
+        // In development (debug build), use a local "data" directory relative to CWD
+        // We use "target/data" to avoid triggering file watchers that monitor src/
+        #[cfg(debug_assertions)]
+        {
+            if let Ok(cwd) = std::env::current_dir() {
+                // If we are in src-tauri (common for cargo run), target is here.
+                // If we are in project root, we might want src-tauri/target/data or just target/data.
+                // To be safe and avoid loops, checking if "target" exists or just using it is usually fine as it is ignored.
+                return Ok(cwd.join("target").join("data"));
+            }
+        }
+
         // Use platform-specific data directory
         dirs::data_local_dir()
             .map(|dir| dir.join("Stone"))

@@ -93,9 +93,19 @@ export function useFileTreeAPI() {
           useFileTreeStore.getState();
 
         const response = await workspaceAPI.scan(workspaceId);
+        logger.info('[useFileTreeAPI.loadFileTree] Scan response:', {
+          success: response.success,
+          fileCount: response.data?.files?.length,
+          structureCount: response.data?.structure?.length,
+          error: response.error
+        });
 
         if (response.success && response.data) {
           const tree = toFileTree(response.data.structure || []);
+          logger.info('[useFileTreeAPI.loadFileTree] Mapped tree:', {
+            nodeCount: tree.length,
+            nodes: tree.map(n => n.name)
+          });
           setTree(tree);
           if (response.data.counts) {
             setCounts(response.data.counts);

@@ -22,6 +22,7 @@ pub mod graph_commands;
 pub mod quick_capture_commands;
 pub mod task_commands;
 pub mod version_commands;
+pub mod performance_commands;
 
 // Re-exports
 pub use app_state::AppState;

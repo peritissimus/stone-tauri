@@ -25,7 +25,7 @@ pub struct NoteRow {
     pub is_archived: i32,
     pub is_deleted: i32,
     pub deleted_at: Option<i64>,
-    pub embedding: Option<Vec<u8>>, // Not mapped to domain - handled separately
+    pub embedding: Option<Vec<u8>>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -44,14 +44,13 @@ pub struct InsertableNote {
     pub is_archived: i32,
     pub is_deleted: i32,
     pub deleted_at: Option<i64>,
-    // embedding field omitted - handled separately via update methods
+    pub embedding: Option<Vec<u8>>,
     pub created_at: i64,
     pub updated_at: i64,
 }
 
 impl NoteRow {
     /// Convert database row to domain entity
-    /// Note: embedding field is not mapped - it's handled separately
     pub fn to_domain(self) -> Note {
         Note {
             id: self.id,
@@ -64,6 +63,7 @@ impl NoteRow {
             is_archived: i32_to_bool(self.is_archived),
             is_deleted: i32_to_bool(self.is_deleted),
             deleted_at: optional_timestamp_to_datetime(self.deleted_at),
+            embedding: self.embedding.map(|b| deserialize_embedding(&b)),
             created_at: timestamp_to_datetime(self.created_at),
             updated_at: timestamp_to_datetime(self.updated_at),
         }
@@ -72,7 +72,6 @@ impl NoteRow {
 
 impl InsertableNote {
     /// Convert domain entity to insertable struct
-    /// Note: embedding field is not included - it's handled separately
     pub fn from_domain(note: &Note) -> Self {
         Self {
             id: note.id.clone(),
@@ -89,6 +88,7 @@ impl InsertableNote {
             is_archived: bool_to_i32(note.is_archived),
             is_deleted: bool_to_i32(note.is_deleted),
             deleted_at: optional_datetime_to_timestamp(&note.deleted_at),
+            embedding: note.embedding.as_ref().map(|v| serialize_embedding(v)),
             created_at: datetime_to_timestamp(&note.created_at),
             updated_at: datetime_to_timestamp(&note.updated_at),
         }
@@ -113,6 +113,7 @@ mod tests {
             is_archived: false,
             is_deleted: false,
             deleted_at: None,
+            embedding: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -133,7 +134,7 @@ mod tests {
             is_archived: insertable.is_archived,
             is_deleted: insertable.is_deleted,
             deleted_at: insertable.deleted_at,
-            embedding: None, // Not mapped
+            embedding: None,
             created_at: insertable.created_at,
             updated_at: insertable.updated_at,
         };

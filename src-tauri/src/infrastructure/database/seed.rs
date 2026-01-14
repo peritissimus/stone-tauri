@@ -124,8 +124,8 @@ fn seed_default_settings(conn: &mut SqliteConnection) -> DomainResult<()> {
 }
 
 /// Seed default workspace
-fn seed_default_workspace(conn: &mut SqliteConnection) -> DomainResult<()> {
-    use schema::workspaces::dsl::*;
+fn seed_default_workspace(conn: &mut SqliteConnection) -> DomainResult<(String, std::path::PathBuf)> {
+    use schema::workspaces;
 
     // Use the user's NoteBook directory
     let home_dir = dirs::home_dir()
@@ -147,25 +147,215 @@ fn seed_default_workspace(conn: &mut SqliteConnection) -> DomainResult<()> {
 
     let workspace_id = uuid::Uuid::new_v4().to_string();
     let now = datetime_to_timestamp(&Utc::now());
-    let workspace_path = default_workspace_path
+    let workspace_path_str = default_workspace_path
         .to_str()
         .ok_or_else(|| {
             DomainError::ConfigurationError("Invalid workspace path".to_string())
         })?;
 
-    diesel::insert_into(workspaces)
+    diesel::insert_into(workspaces::table)
         .values((
-            id.eq(&workspace_id),
-            name.eq("NoteBook"),
-            folder_path.eq(workspace_path),
-            is_active.eq(1),
-            created_at.eq(now),
-            last_accessed_at.eq(now),
+            workspaces::id.eq(&workspace_id),
+            workspaces::name.eq("NoteBook"),
+            workspaces::folder_path.eq(workspace_path_str),
+            workspaces::is_active.eq(1),
+            workspaces::created_at.eq(now),
+            workspaces::last_accessed_at.eq(now),
         ))
         .execute(conn)
         .map_err(|e| {
             DomainError::DatabaseError(format!("Failed to seed default workspace: {}", e))
         })?;
+
+    Ok((workspace_id, default_workspace_path))
+}
+
+/// Seed default notebooks
+fn seed_default_notebooks(conn: &mut SqliteConnection, workspace_id_val: &str) -> DomainResult<(String, String)> {
+    use schema::notebooks;
+
+    let personal_id = uuid::Uuid::new_v4().to_string();
+    let work_id = uuid::Uuid::new_v4().to_string();
+    let journal_id = uuid::Uuid::new_v4().to_string();
+    let now = datetime_to_timestamp(&Utc::now());
+
+    let default_notebooks = vec![
+        (personal_id.clone(), "Personal", "Personal", "📝", "#ec4899", 0),
+        (work_id.clone(), "Work", "Work", "💼", "#3b82f6", 1),
+        (journal_id, "Journal", "Journal", "📅", "#22c55e", 2),
+    ];
+
+    for (nb_id, nb_name, nb_path, nb_icon, nb_color, nb_pos) in default_notebooks {
+        diesel::insert_into(notebooks::table)
+            .values((
+                notebooks::id.eq(&nb_id),
+                notebooks::name.eq(nb_name),
+                notebooks::workspace_id.eq(workspace_id_val),
+                notebooks::folder_path.eq(nb_path),
+                notebooks::icon.eq(nb_icon),
+                notebooks::color.eq(nb_color),
+                notebooks::position.eq(nb_pos),
+                notebooks::created_at.eq(now),
+                notebooks::updated_at.eq(now),
+            ))
+            .execute(conn)
+            .map_err(|e| {
+                DomainError::DatabaseError(format!("Failed to seed notebook '{}': {}", nb_name, e))
+            })?;
+    }
+
+    Ok((personal_id, work_id))
+}
+
+/// Seed default tags
+fn seed_default_tags(conn: &mut SqliteConnection) -> DomainResult<(String, String)> {
+    use schema::tags;
+
+    let ideas_id = uuid::Uuid::new_v4().to_string();
+    let planning_id = uuid::Uuid::new_v4().to_string();
+    let now = datetime_to_timestamp(&Utc::now());
+
+    let default_tags = vec![
+        (ideas_id.clone(), "ideas", "#22c55e"),
+        (planning_id.clone(), "planning", "#f97316"),
+    ];
+
+    for (tag_id, tag_name, tag_color) in default_tags {
+        diesel::insert_into(tags::table)
+            .values((
+                tags::id.eq(&tag_id),
+                tags::name.eq(tag_name),
+                tags::color.eq(tag_color),
+                tags::created_at.eq(now),
+                tags::updated_at.eq(now),
+            ))
+            .execute(conn)
+            .map_err(|e| {
+                DomainError::DatabaseError(format!("Failed to seed tag '{}': {}", tag_name, e))
+            })?;
+    }
+
+    Ok((ideas_id, planning_id))
+}
+
+/// Seed default notes and physical files
+fn seed_default_notes(
+    conn: &mut SqliteConnection, 
+    workspace_id_val: &str, 
+    workspace_path: &std::path::Path,
+    personal_notebook_id_val: &str,
+    work_notebook_id_val: &str,
+    ideas_tag_id_val: &str,
+    planning_tag_id_val: &str
+) -> DomainResult<()> {
+    use schema::{notes, note_tags};
+
+    let welcome_id = uuid::Uuid::new_v4().to_string();
+    let roadmap_id = uuid::Uuid::new_v4().to_string();
+    let now = datetime_to_timestamp(&Utc::now());
+
+    // Create physical directories
+    let personal_dir = workspace_path.join("Personal");
+    let work_dir = workspace_path.join("Work");
+    let journal_dir = workspace_path.join("Journal");
+
+    std::fs::create_dir_all(&personal_dir).map_err(|e| DomainError::FileStorageError(e.to_string()))?;
+    std::fs::create_dir_all(&work_dir).map_err(|e| DomainError::FileStorageError(e.to_string()))?;
+    std::fs::create_dir_all(&journal_dir).map_err(|e| DomainError::FileStorageError(e.to_string()))?;
+
+    // Create Welcome Note
+    let welcome_file_path = "Personal/Welcome to Stone.md";
+    let welcome_abs_path = workspace_path.join("Personal/Welcome to Stone.md");
+    let welcome_content = r#"---
+tags:
+  - ideas
+favorite: true
+pinned: true
+---
+
+# Welcome to Stone
+
+This sample note shows how rich text content is stored.
+
+- Create notebooks to organize topics.
+- Add tags to group related ideas.
+- Use the TipTap editor to capture your thoughts.
+"#;
+
+    if !welcome_abs_path.exists() {
+        std::fs::write(&welcome_abs_path, welcome_content)
+            .map_err(|e| DomainError::FileStorageError(format!("Failed to write welcome note: {}", e)))?;
+    }
+
+    diesel::insert_into(notes::table)
+        .values((
+            notes::id.eq(&welcome_id),
+            notes::title.eq("Welcome to Stone"),
+            notes::file_path.eq(welcome_file_path),
+            notes::notebook_id.eq(personal_notebook_id_val),
+            notes::workspace_id.eq(workspace_id_val),
+            notes::is_favorite.eq(1),
+            notes::is_pinned.eq(1),
+            notes::created_at.eq(now),
+            notes::updated_at.eq(now),
+        ))
+        .execute(conn)
+        .map_err(|e| DomainError::DatabaseError(format!("Failed to seed welcome note: {}", e)))?;
+
+    // Link tag to Welcome Note
+    diesel::insert_into(note_tags::table)
+        .values((
+            note_tags::note_id.eq(&welcome_id),
+            note_tags::tag_id.eq(ideas_tag_id_val),
+            note_tags::created_at.eq(now),
+        ))
+        .execute(conn)
+        .map_err(|e| DomainError::DatabaseError(format!("Failed to link tag to welcome note: {}", e)))?;
+
+    // Create Roadmap Note
+    let roadmap_file_path = "Work/Product Roadmap.md";
+    let roadmap_abs_path = workspace_path.join("Work/Product Roadmap.md");
+    let roadmap_content = r#"---
+tags:
+  - planning
+---
+
+# Quarterly Roadmap
+
+Track the high-level initiatives planned for this quarter.
+
+1. Ship the new editor experience.
+2. Improve sync reliability.
+3. Publish public beta announcement.
+"#;
+
+    if !roadmap_abs_path.exists() {
+        std::fs::write(&roadmap_abs_path, roadmap_content)
+            .map_err(|e| DomainError::FileStorageError(format!("Failed to write roadmap note: {}", e)))?;
+    }
+
+    diesel::insert_into(notes::table)
+        .values((
+            notes::id.eq(&roadmap_id),
+            notes::title.eq("Product Roadmap"),
+            notes::file_path.eq(roadmap_file_path),
+            notes::notebook_id.eq(work_notebook_id_val),
+            notes::workspace_id.eq(workspace_id_val),
+            notes::created_at.eq(now),
+            notes::updated_at.eq(now),
+        ))
+        .execute(conn)
+        .map_err(|e| DomainError::DatabaseError(format!("Failed to seed roadmap note: {}", e)))?;
+
+    // Link tag to Roadmap Note
+    diesel::insert_into(note_tags::table)
+        .values((
+            note_tags::note_id.eq(&roadmap_id),
+            note_tags::tag_id.eq(planning_tag_id_val),
+            note_tags::created_at.eq(now),
+        ))
+        .execute(conn)
+        .map_err(|e| DomainError::DatabaseError(format!("Failed to link tag to roadmap note: {}", e)))?;
 
     Ok(())
 }
@@ -195,10 +385,36 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
         let seed_result: Result<(), DomainError> = (|| {
             conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 // Seed default workspace first
-                seed_default_workspace(conn).map_err(|e| {
+                let (workspace_id, workspace_path) = seed_default_workspace(conn).map_err(|e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded default workspace");
+
+                // Seed notebooks
+                let (personal_nb_id, work_nb_id) = seed_default_notebooks(conn, &workspace_id).map_err(|e| {
+                    diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Seeded default notebooks");
+
+                // Seed tags
+                let (ideas_tag_id, planning_tag_id) = seed_default_tags(conn).map_err(|e| {
+                    diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Seeded default tags");
+
+                // Seed notes
+                seed_default_notes(
+                    conn, 
+                    &workspace_id, 
+                    &workspace_path, 
+                    &personal_nb_id, 
+                    &work_nb_id, 
+                    &ideas_tag_id, 
+                    &planning_tag_id
+                ).map_err(|e| {
+                     diesel::result::Error::RollbackTransaction
+                })?;
+                tracing::info!("Seeded default notes");
 
                 // Seed topics - convert errors inside
                 seed_topics(conn).map_err(|e| {

@@ -100,10 +100,10 @@ impl NoteUseCases for NoteUseCasesImpl {
         let absolute_path = Path::new(&workspace.folder_path).join(&relative_path);
 
         // Write initial content to file
+        // Content is already Markdown from the frontend (via jsonToMarkdown), no conversion needed
         let content = input.content.unwrap_or_default();
-        let markdown = self.markdown_processor.html_to_markdown(&content)?;
         self.file_storage
-            .write(absolute_path.to_str().unwrap(), &markdown)
+            .write(absolute_path.to_str().unwrap(), &content)
             .await?;
 
         // Save to repository
@@ -214,7 +214,10 @@ impl NoteUseCases for NoteUseCasesImpl {
                     })?;
 
                 let absolute_path = Path::new(&workspace.folder_path).join(file_path);
-                let body_markdown = self.markdown_processor.html_to_markdown(&content)?;
+                
+                // Content is already Markdown from the frontend (via jsonToMarkdown), no conversion needed
+                // Calling html_to_markdown would incorrectly convert literal <br/> tags in code blocks
+                let body_markdown = content;
 
                 // Prepend title heading
                 let title_heading = format!("# {}\n\n", note.title);
@@ -544,7 +547,9 @@ impl NoteUseCases for NoteUseCasesImpl {
             .ok_or_else(|| DomainError::ValidationError("Workspace not found".to_string()))?;
 
         let absolute_path = Path::new(&workspace.folder_path).join(&file_path);
-        let body_markdown = self.markdown_processor.html_to_markdown(content)?;
+        
+        // Content is already Markdown from the frontend (via jsonToMarkdown), no conversion needed
+        let body_markdown = content;
 
         // Prepend title heading
         let title_heading = format!("# {}\n\n", note.title);
