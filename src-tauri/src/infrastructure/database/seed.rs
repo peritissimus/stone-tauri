@@ -385,19 +385,19 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
         let seed_result: Result<(), DomainError> = (|| {
             conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 // Seed default workspace first
-                let (workspace_id, workspace_path) = seed_default_workspace(conn).map_err(|e| {
+                let (workspace_id, workspace_path) = seed_default_workspace(conn).map_err(|_e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded default workspace");
 
                 // Seed notebooks
-                let (personal_nb_id, work_nb_id) = seed_default_notebooks(conn, &workspace_id).map_err(|e| {
+                let (personal_nb_id, work_nb_id) = seed_default_notebooks(conn, &workspace_id).map_err(|_e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded default notebooks");
 
                 // Seed tags
-                let (ideas_tag_id, planning_tag_id) = seed_default_tags(conn).map_err(|e| {
+                let (ideas_tag_id, planning_tag_id) = seed_default_tags(conn).map_err(|_e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded default tags");
@@ -411,25 +411,25 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
                     &work_nb_id, 
                     &ideas_tag_id, 
                     &planning_tag_id
-                ).map_err(|e| {
+                ).map_err(|_e| {
                      diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded default notes");
 
                 // Seed topics - convert errors inside
-                seed_topics(conn).map_err(|e| {
+                seed_topics(conn).map_err(|_e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded predefined topics");
 
                 // Seed default settings
-                seed_default_settings(conn).map_err(|e| {
+                seed_default_settings(conn).map_err(|_e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Seeded default settings");
 
                 // Mark as seeded
-                mark_database_seeded(conn).map_err(|e| {
+                mark_database_seeded(conn).map_err(|_e| {
                     diesel::result::Error::RollbackTransaction
                 })?;
                 tracing::info!("Marked database as seeded");

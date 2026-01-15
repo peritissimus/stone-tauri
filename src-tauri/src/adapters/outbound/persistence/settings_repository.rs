@@ -17,7 +17,7 @@ use crate::shared::database::schema::settings;
 use super::{
     db_pool::{get_connection, DbPool},
     mappers::{InsertableSetting, SettingRow},
-    utils::{datetime_to_timestamp, map_diesel_error},
+    utils::map_diesel_error,
 };
 
 /// Diesel implementation of SettingsRepository

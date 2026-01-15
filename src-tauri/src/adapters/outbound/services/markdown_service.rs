@@ -9,7 +9,7 @@ use regex::Regex;
 use std::collections::HashMap;
 
 use crate::domain::{
-    errors::{DomainError, DomainResult},
+    errors::DomainResult,
     ports::outbound::{MarkdownLink, MarkdownMetadata, MarkdownProcessor, ParsedMarkdown},
 };
 

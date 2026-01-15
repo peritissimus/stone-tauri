@@ -3,9 +3,9 @@
 //! Implementation of Git operations using the git2 crate (libgit2).
 
 use async_trait::async_trait;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{TimeZone, Utc};
 use git2::{
-    BranchType, Commit, Cred, Direction, FetchOptions, Index, IndexAddOption, Oid, PushOptions,
+    BranchType, Commit, Cred, FetchOptions, IndexAddOption, PushOptions,
     RemoteCallbacks, Repository, Signature, StatusOptions,
 };
 use std::path::Path;

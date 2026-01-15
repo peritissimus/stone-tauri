@@ -13,7 +13,7 @@ use crate::domain::{
     entities::Topic,
     errors::{DomainError, DomainResult},
     ports::outbound::{
-        FindAllWithCountsOptions, GetNotesForTopicOptions, NoteTopicAssignment,
+        FindAllWithCountsOptions, GetNotesForTopicOptions,
         NoteTopicWithDetails, TopicAssignmentOptions, TopicNoteRecord, TopicRepository,
         TopicWithCount,
     },

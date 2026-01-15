@@ -46,7 +46,7 @@ impl SystemService for TauriSystemService {
         &self,
         options: Option<FolderPickerOptions>,
     ) -> DomainResult<Option<String>> {
-        use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+        use tauri_plugin_dialog::DialogExt;
 
         let options = options.unwrap_or_default();
         let app_handle = self.app_handle.clone();

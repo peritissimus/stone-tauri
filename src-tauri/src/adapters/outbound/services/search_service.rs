@@ -10,7 +10,7 @@ use crate::{
     adapters::outbound::persistence::DbPool,
     domain::{
         entities::Note,
-        errors::{DomainError, DomainResult},
+        errors::DomainResult,
         ports::outbound::{
             DateRangeOptions, HybridSearchOptions, SearchEngine, SearchOptions, SearchResult,
             SemanticSearchResult, TagSearchOptions,
