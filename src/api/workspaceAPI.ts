@@ -39,10 +39,9 @@ const ScanResponseSchema = z
           .passthrough(),
       )
       .optional(),
-    // Allow any value type (e.g. string 'NaN' or actual NaN) but try to coerce to number
-    // If it fails (like NaN), Zod catches it. So we need 'z.any()' to bypass strict check if we sanitize manually.
-    counts: z.record(z.any()).optional(),
-    total: z.any().optional(),
+    // Use z.unknown() to accept any value type - we sanitize before validation anyway
+    counts: z.record(z.string(), z.unknown()).optional(),
+    total: z.unknown().optional(),
   })
   .passthrough();
 
