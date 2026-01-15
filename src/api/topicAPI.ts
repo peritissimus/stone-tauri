@@ -19,7 +19,6 @@ import { validateResponse } from './validation';
 import {
   TopicSchema,
   TopicWithCountSchema,
-  ClassificationResultSchema,
   SimilarNoteResultSchema,
   EmbeddingStatusSchema,
   NoteTopicDetailsSchema,
@@ -166,7 +165,7 @@ export const topicAPI = {
   /**
    * Classify all pending notes
    */
-  classifyAll: async (options?: {
+  classifyAll: async (_options?: {
     excludeJournal?: boolean;
   }): Promise<IpcResponse<{ processed: number; total: number; failed: number }>> => {
     // Note: classify_all_notes in Rust takes no arguments in the current implementation I read?
@@ -186,7 +185,7 @@ export const topicAPI = {
   /**
    * Reclassify all notes (force)
    */
-  reclassifyAll: async (options?: {
+  reclassifyAll: async (_options?: {
     excludeJournal?: boolean;
   }): Promise<IpcResponse<{ processed: number; total: number; failed: number; skipped: number }>> => {
     // Same here, if Rust command takes no args.

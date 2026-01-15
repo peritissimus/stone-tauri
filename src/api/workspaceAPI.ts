@@ -177,27 +177,20 @@ export const workspaceAPI = {
     workspaceId?: string,
   ): Promise<
     IpcResponse<{
-      workspaceId: string;
-      notebooks: { created: number; updated: number; errors: string[] };
-      notes: { created: number; updated: number; deleted: number; errors: string[] };
+      notes: { created: number; updated: number; deleted: number };
+      durationMs: number;
     }>
   > => {
     const response = await invokeIpc(WORKSPACE_COMMANDS.SYNC, workspaceId ? { workspace_id: workspaceId } : {});
     return validateResponse(
       response,
       z.object({
-        workspaceId: z.string(),
-        notebooks: z.object({
-          created: z.number(),
-          updated: z.number(),
-          errors: z.array(z.string()),
-        }),
         notes: z.object({
           created: z.number(),
           updated: z.number(),
           deleted: z.number(),
-          errors: z.array(z.string()),
         }),
+        durationMs: z.number(),
       }),
     );
   },
