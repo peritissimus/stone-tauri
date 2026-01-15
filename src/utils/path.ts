@@ -5,10 +5,15 @@
 /**
  * Normalize a file path for consistent comparison
  * - Converts backslashes to forward slashes
+ * - Removes leading "./" prefixes
  * - Removes leading and trailing slashes
  */
 export function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+  return path
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
+    .replace(/^\/+/, '')
+    .replace(/\/+$/, '');
 }
 
 /**

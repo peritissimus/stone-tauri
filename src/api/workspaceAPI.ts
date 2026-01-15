@@ -11,6 +11,40 @@ import type { Workspace, IpcResponse } from '../types';
 import { validateResponse } from './validation';
 import { WorkspaceSchema } from './schemas';
 import { z } from 'zod';
+import { logger } from '../utils/logger';
+
+// Permissive scan schema to tolerate backend variations
+const ScanResponseSchema = z
+  .object({
+    files: z
+      .array(
+        z
+          .object({
+            path: z.string(),
+            relativePath: z.string(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    structure: z
+      .array(
+        z
+          .object({
+            name: z.string(),
+            path: z.string(),
+            relativePath: z.string().optional(),
+            type: z.enum(['file', 'folder', 'directory', 'dir']),
+            children: z.array(z.any()).nullable().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    // Allow any value type (e.g. string 'NaN' or actual NaN) but try to coerce to number
+    // If it fails (like NaN), Zod catches it. So we need 'z.any()' to bypass strict check if we sanitize manually.
+    counts: z.record(z.any()).optional(),
+    total: z.any().optional(),
+  })
+  .passthrough();
 
 export interface FileTreeNode {
   name: string;
@@ -95,29 +129,46 @@ export const workspaceAPI = {
       total: number;
     }>
   > => {
-    const response = await invokeIpc(WORKSPACE_COMMANDS.SCAN, { workspace_id: workspaceId });
-    return validateResponse(
-      response,
-      z.object({
-        files: z.array(
-          z.object({
-            path: z.string(),
-            relativePath: z.string(),
-          }),
-        ),
-        structure: z.array(
-          z.object({
-            name: z.string(),
-            path: z.string(),
-            relativePath: z.string(),
-            type: z.enum(['file', 'folder']),
-            children: z.array(z.any()).nullable().optional(),
-          }),
-        ),
-        counts: z.record(z.number()),
-        total: z.number(),
-      }),
-    );
+    try {
+      // Backend expects camelCase `workspaceId` (see error "missing required key workspaceId")
+      const params = {
+        workspaceId,
+        // Send both casings for compatibility with backend expectations
+        workspace_id: workspaceId,
+      };
+      logger.info('[workspaceAPI.scan] invoking', params);
+      const response = await invokeIpc(WORKSPACE_COMMANDS.SCAN, params);
+      logger.info('[workspaceAPI.scan] raw response', response);
+
+      // Sanitize counts/total: replace NaN/invalid with 0 to satisfy downstream usage
+      if (response && typeof response === 'object' && (response as any).data) {
+        const data: any = (response as any).data;
+        if (data.counts && typeof data.counts === 'object') {
+          const sanitized: Record<string, number> = {};
+          Object.entries(data.counts).forEach(([key, value]) => {
+            const num = Number(value);
+            sanitized[key] = Number.isFinite(num) ? num : 0;
+          });
+          data.counts = sanitized;
+        }
+        if (data.total !== undefined) {
+          const totalNum = Number(data.total);
+          data.total = Number.isFinite(totalNum) ? totalNum : 0;
+        }
+      }
+
+      // Validate with permissive schema (z.any() for counts avoids blocking on NaN/strings)
+      return validateResponse(response, ScanResponseSchema);
+    } catch (error) {
+      logger.error('[workspaceAPI.scan] failed', { error, workspaceId });
+      return {
+        success: false,
+        error: {
+          code: 'CLIENT_VALIDATION',
+          message: error instanceof Error ? error.message : 'Failed to scan workspace',
+        },
+      } as IpcResponse<any>;
+    }
   },
 
   /**

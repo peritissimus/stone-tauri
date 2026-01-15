@@ -2,7 +2,7 @@
  * FileTree Component - container that wires actions and renders folder/file nodes.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heading3 } from '@/components/base/ui/text';
 import { InputModal } from '@/components/composites';
@@ -17,6 +17,17 @@ import { FolderNode } from './FolderNode';
 export function FileTree() {
   const navigate = useNavigate();
   const { tree, setActiveFolder, setSelectedFile } = useFileTreeStore();
+
+  useEffect(() => {
+    logger.info('[FileTree] Tree snapshot', {
+      count: tree.length,
+      sample: tree.slice(0, 5).map((node) => ({
+        name: node.name,
+        path: node.path,
+        type: node.type,
+      })),
+    });
+  }, [tree]);
   const { createNote, updateNote, deleteNote, moveNote } = useNoteAPI();
   const { loadFileTree, renameFolder, deleteFolder, moveFolder } = useFileTreeAPI();
   const [renameTarget, setRenameTarget] = useState<{ noteId: string; title: string } | null>(null);

@@ -10,6 +10,7 @@ const pathCache = new Map<string, string>();
 /**
  * Normalize a file path with caching
  * - Converts backslashes to forward slashes
+ * - Removes leading "./" prefixes
  * - Removes leading/trailing slashes
  * - Caches results for O(1) lookups
  */
@@ -18,7 +19,11 @@ export function normalizePath(path: string): string {
     return pathCache.get(path)!;
   }
 
-  const normalized = path.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+  const normalized = path
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
+    .replace(/^\/+/, '')
+    .replace(/\/+$/, '');
 
   pathCache.set(path, normalized);
   return normalized;

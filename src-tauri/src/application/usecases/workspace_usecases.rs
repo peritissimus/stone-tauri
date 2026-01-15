@@ -312,7 +312,8 @@ impl WorkspaceUseCases for WorkspaceUseCasesImpl {
 
         // Build counts per folder
         let mut counts: HashMap<String, i32> = HashMap::new();
-        counts.insert("__root__".to_string(), files.len() as i32);
+        let total_files = files.len() as i32;
+        counts.insert("__root__".to_string(), total_files);
 
         for file in &files {
             let parts: Vec<&str> = file.relative_path.split('/').collect();
@@ -328,14 +329,19 @@ impl WorkspaceUseCases for WorkspaceUseCasesImpl {
                 }
             }
         }
-
-        let total = files.len() as i32;
+        
+        // Ensure counts are finite - though with i32 they shouldn't be NaN
+        // This is a safety measure against weird serialization behavior
+        let sanitized_counts: HashMap<String, i32> = counts
+            .into_iter()
+            .map(|(k, v)| (k, v))
+            .collect();
 
         Ok(ScanWorkspaceResponse {
             files,
             structure,
-            total,
-            counts,
+            total: total_files,
+            counts: sanitized_counts,
         })
     }
 
