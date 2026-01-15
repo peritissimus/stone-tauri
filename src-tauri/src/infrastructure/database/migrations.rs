@@ -24,6 +24,7 @@ pub fn run_migrations(pool: &DbPool) -> DomainResult<()> {
 }
 
 /// Check if migrations are pending
+#[allow(dead_code)]
 pub fn has_pending_migrations(pool: &DbPool) -> DomainResult<bool> {
     let mut conn = pool.get().map_err(|e| {
         DomainError::DatabaseError(format!("Failed to get database connection: {}", e))
@@ -39,6 +40,7 @@ pub fn has_pending_migrations(pool: &DbPool) -> DomainResult<bool> {
 }
 
 /// Get list of applied migrations
+#[allow(dead_code)]
 pub fn applied_migrations(pool: &DbPool) -> DomainResult<Vec<String>> {
     let mut conn = pool.get().map_err(|e| {
         DomainError::DatabaseError(format!("Failed to get database connection: {}", e))
@@ -54,6 +56,7 @@ pub fn applied_migrations(pool: &DbPool) -> DomainResult<Vec<String>> {
 }
 
 /// Revert the last migration (USE WITH CAUTION)
+#[allow(dead_code)]
 pub fn revert_last_migration(pool: &DbPool) -> DomainResult<()> {
     let mut conn = pool.get().map_err(|e| {
         DomainError::DatabaseError(format!("Failed to get database connection: {}", e))

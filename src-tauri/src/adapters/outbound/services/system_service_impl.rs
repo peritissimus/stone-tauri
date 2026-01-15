@@ -4,7 +4,7 @@
 
 use async_trait::async_trait;
 use std::path::Path;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 use crate::domain::{
     errors::{DomainError, DomainResult},
@@ -52,14 +52,14 @@ impl SystemService for TauriSystemService {
         let app_handle = self.app_handle.clone();
 
         tokio::task::spawn_blocking(move || {
-            let mut builder = app_handle.dialog().file();
+            let mut _builder = app_handle.dialog().file();
 
             if let Some(title) = options.title {
-                builder = builder.set_title(&title);
+                _builder = _builder.set_title(&title);
             }
 
             if let Some(default_path) = options.default_path {
-                builder = builder.set_directory(&default_path);
+                _builder = _builder.set_directory(&default_path);
             }
 
             // For now, return error as the blocking API changed
@@ -140,15 +140,15 @@ impl SystemService for TauriSystemService {
     }
 
     async fn open_external(&self, url: &str) -> DomainResult<()> {
-        use tauri_plugin_shell::ShellExt;
+        use tauri_plugin_opener::OpenerExt;
 
         let app_handle = self.app_handle.clone();
         let url = url.to_string();
 
         tokio::task::spawn_blocking(move || {
             app_handle
-                .shell()
-                .open(&url, None)
+                .opener()
+                .open_url(&url, None::<&str>)
                 .map_err(|e| {
                     DomainError::ExternalServiceError(format!("Failed to open URL: {}", e))
                 })

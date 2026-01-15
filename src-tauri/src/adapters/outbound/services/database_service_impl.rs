@@ -30,15 +30,6 @@ impl DieselDatabaseService {
             database_path,
         }
     }
-
-    /// Get the file size of the database
-    fn get_database_size(&self) -> DomainResult<u64> {
-        let metadata = std::fs::metadata(&self.database_path).map_err(|e| {
-            DomainError::DatabaseError(format!("Failed to get database metadata: {}", e))
-        })?;
-
-        Ok(metadata.len())
-    }
 }
 
 #[async_trait]

@@ -24,19 +24,17 @@ use crate::domain::{
 
 /// Implementation of all Search use cases
 pub struct SearchUseCasesImpl {
-    note_repository: Arc<dyn NoteRepository>,
     search_engine: Arc<dyn SearchEngine>,
     embedding_service: Arc<dyn EmbeddingService>,
 }
 
 impl SearchUseCasesImpl {
     pub fn new(
-        note_repository: Arc<dyn NoteRepository>,
+        _note_repository: Arc<dyn NoteRepository>,
         search_engine: Arc<dyn SearchEngine>,
         embedding_service: Arc<dyn EmbeddingService>,
     ) -> Self {
         Self {
-            note_repository,
             search_engine,
             embedding_service,
         }
