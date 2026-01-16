@@ -109,6 +109,35 @@ impl WorkspaceUseCasesImpl {
             }
         }
 
+        // Sort the result:
+        // - Folders first, then files
+        // - For Journal folder files (YYYY-MM-DD.md), sort by date descending (newest first)
+        // - For everything else, sort alphabetically
+        result.sort_by(|a, b| {
+            use std::cmp::Ordering;
+
+            // Folders before files
+            match (&a.entry_type, &b.entry_type) {
+                (FileSystemEntryType::Folder, FileSystemEntryType::File) => return Ordering::Less,
+                (FileSystemEntryType::File, FileSystemEntryType::Folder) => return Ordering::Greater,
+                _ => {}
+            }
+
+            // Both are files in Journal folder - sort by date descending
+            if relative_path == "Journal" && a.entry_type == FileSystemEntryType::File && b.entry_type == FileSystemEntryType::File {
+                // Extract dates from filenames (format: YYYY-MM-DD.md)
+                let a_date = a.name.strip_suffix(".md").unwrap_or(&a.name);
+                let b_date = b.name.strip_suffix(".md").unwrap_or(&b.name);
+
+                // Compare as strings in reverse (descending order)
+                // Since format is YYYY-MM-DD, lexicographic comparison works
+                return b_date.cmp(a_date);
+            }
+
+            // Default: alphabetical order
+            a.name.cmp(&b.name)
+        });
+
         Ok(result)
         })
     }

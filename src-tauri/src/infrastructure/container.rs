@@ -22,6 +22,7 @@ use crate::{
 /// Container for all application dependencies
 pub struct Container {
     pub app_state: AppState,
+    pub file_watcher: Arc<dyn crate::domain::ports::outbound::FileWatcher>,
 }
 
 impl Container {
@@ -52,8 +53,10 @@ impl Container {
             .unwrap_or_else(|_| "stone.db".to_string());
         let database_service = Arc::new(DieselDatabaseService::new(pool.clone(), database_path));
 
-        // Event publisher is optional (not implemented yet)
-        let event_publisher: Option<Arc<dyn crate::domain::ports::outbound::EventPublisher>> = None;
+        // Event publisher and file watcher
+        let event_publisher = Arc::new(TokioEventPublisher::new());
+        let event_publisher_opt: Option<Arc<dyn crate::domain::ports::outbound::EventPublisher>> = Some(event_publisher.clone());
+        let file_watcher = Arc::new(NotifyFileWatcher::new(event_publisher.clone()));
 
         // === Use Cases ===
         let note_usecases = Arc::new(NoteUseCasesImpl::new(
@@ -61,12 +64,12 @@ impl Container {
             workspace_repository.clone(),
             file_storage.clone(),
             markdown_processor.clone(),
-            event_publisher.clone(),
+            event_publisher_opt.clone(),
         ));
 
         let notebook_usecases = Arc::new(NotebookUseCasesImpl::new(
             notebook_repository.clone(),
-            event_publisher.clone(),
+            event_publisher_opt.clone(),
         ));
 
         let workspace_usecases = Arc::new(WorkspaceUseCasesImpl::new(
@@ -75,12 +78,12 @@ impl Container {
             file_storage.clone(),
             system_service.clone(),
             markdown_processor.clone(),
-            event_publisher.clone(),
+            event_publisher_opt.clone(),
         ));
 
         let tag_usecases = Arc::new(TagUseCasesImpl::new(
             tag_repository.clone(),
-            event_publisher.clone(),
+            event_publisher_opt.clone(),
         ));
 
         let topic_usecases = Arc::new(TopicUseCasesImpl::new(
@@ -90,7 +93,7 @@ impl Container {
             file_storage.clone(),
             embedding_service.clone(),
             markdown_processor.clone(),
-            event_publisher.clone(),
+            event_publisher_opt.clone(),
         ));
 
         let attachment_usecases = Arc::new(AttachmentUseCasesImpl::new(
@@ -178,6 +181,6 @@ impl Container {
 
         tracing::info!("Dependency injection container built successfully");
 
-        Ok(Self { app_state })
+        Ok(Self { app_state, file_watcher })
     }
 }

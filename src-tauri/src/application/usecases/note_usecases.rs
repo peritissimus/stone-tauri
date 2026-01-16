@@ -103,7 +103,15 @@ impl NoteUseCases for NoteUseCasesImpl {
             .unwrap_or_else(|| "Personal".to_string());
 
         // Generate filename unless provided as relative_path
-        let filename = format!("{}.md", chrono::Utc::now().format("%Y%m%d-%H%M%S-%3f"));
+        // For Journal entries, use the title (date) as the filename
+        // For other notes, use timestamp-based filename
+        let filename = if folder_path == "Journal" {
+            // Use title as filename for journal entries (e.g., "2026-01-15.md")
+            format!("{}.md", input.title.trim())
+        } else {
+            // Use timestamp for regular notes
+            format!("{}.md", chrono::Utc::now().format("%Y%m%d-%H%M%S-%3f"))
+        };
 
         // Construct relative path: folderPath/filename.md
         let relative_path = input

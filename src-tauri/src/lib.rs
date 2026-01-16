@@ -88,8 +88,30 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
         }
     }
 
+    // Start file watcher for active workspace
+    tracing::info!("Starting file watcher...");
+    match container.app_state.workspace_usecases.get_active_workspace().await {
+        Ok(Some(workspace)) => {
+            match container.file_watcher.watch_workspace(&workspace).await {
+                Ok(_) => {
+                    tracing::info!("File watcher started for workspace: {}", workspace.name);
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to start file watcher: {}", e);
+                }
+            }
+        }
+        Ok(None) => {
+            tracing::warn!("No active workspace found, file watcher not started");
+        }
+        Err(e) => {
+            tracing::warn!("Failed to get active workspace: {}", e);
+        }
+    }
+
     // Register app state
     app.manage(container.app_state);
+    app.manage(container.file_watcher);
     app.manage(db_manager);
     app.manage(performance_commands::PerformanceState::new());
 
