@@ -19,7 +19,7 @@ export function useQuickCaptureAPI() {
   }, []);
 
   const appendToJournal = useCallback(
-    async (text: string) => {
+    async (text: string, workspaceId?: string) => {
       if (!text.trim() || isSubmitting) return null;
 
       if (isMountedRef.current) {
@@ -28,12 +28,13 @@ export function useQuickCaptureAPI() {
       }
 
       try {
-        const response = await quickCaptureAPI.appendToJournal(text.trim());
+        const response = await quickCaptureAPI.appendToJournal(text.trim(), workspaceId);
         if (response.success && response.data) {
           logger.info('[useQuickCaptureAPI] Appended to journal', {
-            noteId: response.data.note?.id,
+            noteId: response.data.noteId,
+            appended: response.data.appended,
           });
-          return response.data.note;
+          return response.data;
         } else {
           const errorMessage = response.error?.message || 'Failed to append to journal';
           logger.error('[useQuickCaptureAPI] Failed:', errorMessage);

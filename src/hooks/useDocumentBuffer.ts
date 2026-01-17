@@ -11,6 +11,7 @@ import { useDocumentBufferStore } from '@/stores/documentBufferStore';
 import { useNoteAPI } from '@/hooks/useNoteAPI';
 import { useNoteEvents } from '@/hooks/useNoteEvents';
 import { useFileEvents } from '@/hooks/useFileEvents';
+import { subscribe } from '@/lib/events';
 import { jsonToMarkdown } from '@/utils/jsonToMarkdown';
 import { logger } from '@/utils/logger';
 import { deleteDraft } from '@/utils/draftStorage';
@@ -182,6 +183,31 @@ export function useDocumentBuffer({
       [noteId, reloadFromFile],
     ),
   });
+
+  // Listen for FILE:SYNCED events from file watcher (more reliable)
+  useEffect(() => {
+    if (!noteId) return;
+
+    const handleFileSynced = (payload: unknown) => {
+      const data = payload as { file_path?: string; operation?: string };
+      if (!data?.file_path || data.operation !== 'updated') return;
+
+      // Get current note's file path and check if it matches
+      const notes = useNoteStore.getState().notes;
+      const currentNote = notes.find((n) => n.id === noteId);
+
+      if (currentNote?.filePath && data.file_path.includes(currentNote.filePath)) {
+        logger.info('[useDocumentBuffer] File watcher detected update, reloading:', currentNote.filePath);
+        reloadFromFile();
+      }
+    };
+
+    const unsubscribe = subscribe('file:synced', handleFileSynced);
+
+    return () => {
+      unsubscribe.then((unsub) => unsub());
+    };
+  }, [noteId, reloadFromFile]);
 
   // Save current note to file
   const save = useCallback(async (): Promise<boolean> => {

@@ -86,6 +86,11 @@ export const events = {
   onFileDeleted: <T = unknown>(handler: EventHandler<T>) => subscribe<T>('file-deleted', handler),
 
   /**
+   * Subscribe to file sync events from file watcher
+   */
+  onFileSynced: <T = unknown>(handler: EventHandler<T>) => subscribe<T>('file:synced', handler),
+
+  /**
    * Subscribe to note events
    */
   onNoteUpdated: <T = unknown>(handler: EventHandler<T>) => subscribe<T>('note-updated', handler),

@@ -19,6 +19,19 @@
         "height": 600,
         "transparent": true,
         "titleBarStyle": "Overlay"
+      },
+      {
+        "label": "quick-capture",
+        "title": "Quick Capture",
+        "url": "index.html#/quick-capture",
+        "width": 500,
+        "height": 140,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "resizable": false,
+        "skipTaskbar": true,
+        "visible": false
       }
     ],
     "security": {

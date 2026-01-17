@@ -4,6 +4,7 @@
 /// Layers: domain, application, adapters, infrastructure, shared
 
 use tauri::Manager;
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 #[cfg(target_os = "macos")]
 use tauri::window::{Effect, EffectsBuilder};
 
@@ -13,6 +14,7 @@ pub mod application;
 pub mod domain;
 pub mod infrastructure;
 pub mod shared;
+mod quick_capture_window;
 
 // Re-export for convenience
 pub use domain::*;
@@ -53,6 +55,18 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
 
     // Get app handle
     let app_handle = app.handle().clone();
+
+    // Register global shortcut for quick capture
+    let shortcut_app = app_handle.clone();
+    app_handle
+        .global_shortcut()
+        .on_shortcut("Alt+Space", move |_app, _shortcut, event| {
+            if event.state == ShortcutState::Pressed {
+                if let Err(error) = quick_capture_window::show(&shortcut_app) {
+                    tracing::warn!("Failed to show quick capture window: {}", error);
+                }
+            }
+        })?;
 
     // Load configuration
     tracing::info!("Loading configuration...");
@@ -126,6 +140,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
                 setup_app(app).await.map_err(|e| {
@@ -235,6 +250,7 @@ pub fn run() {
             graph_commands::get_graph_data,
             // Quick capture commands
             quick_capture_commands::append_to_journal,
+            quick_capture_commands::hide_quick_capture,
             // Task commands
             task_commands::get_all_tasks,
             task_commands::get_note_tasks,

@@ -1,10 +1,11 @@
 //! Quick Capture Command Handlers
 
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::{
     adapters::inbound::app_state::AppState,
     domain::ports::inbound::AppendToJournalResponse,
+    quick_capture_window,
 };
 
 #[tauri::command]
@@ -18,4 +19,9 @@ pub async fn append_to_journal(
         .append_to_journal(&content, workspace_id.as_deref())
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn hide_quick_capture(app: AppHandle) -> Result<(), String> {
+    quick_capture_window::hide(&app).map_err(|e| e.to_string())
 }

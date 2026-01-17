@@ -6,6 +6,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuickCaptureAPI } from '@/hooks/useQuickCaptureAPI';
+import { quickCaptureAPI } from '@/api/quickCaptureAPI';
 
 const DRAFT_KEY = 'quick-capture-draft';
 
@@ -17,9 +18,34 @@ export function QuickCaptureWindow() {
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const closeWindow = async () => {
+    console.log('[QuickCapture] Attempting to hide window via backend...');
+    try {
+      const response = await quickCaptureAPI.hide();
+      if (response.success) {
+        console.log('[QuickCapture] Window hidden successfully');
+      } else {
+        console.error('[QuickCapture] Failed to hide window:', response.error);
+      }
+    } catch (err) {
+      console.error('[QuickCapture] Failed to hide window:', err);
+    }
+  };
+
   // Auto-focus immediately
   useEffect(() => {
     textareaRef.current?.focus();
+  }, []);
+
+  // Close when the window loses focus
+  useEffect(() => {
+    const handleBlur = () => {
+      console.log('[QuickCapture] Window blur detected, hiding');
+      void closeWindow();
+    };
+
+    window.addEventListener('blur', handleBlur);
+    return () => window.removeEventListener('blur', handleBlur);
   }, []);
 
   // Save draft on text change (debounced naturally by React state)
@@ -31,15 +57,25 @@ export function QuickCaptureWindow() {
     }
   }, [text]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    console.log('[QuickCapture] handleSubmit called with text:', text);
     const trimmedText = text.trim();
-    if (!trimmedText) return;
+    if (!trimmedText) {
+      console.log('[QuickCapture] No text to submit, returning');
+      return;
+    }
 
-    // Clear draft and close immediately for snappy UX
+    // Clear the text state first
+    setText('');
+
+    // Clear draft from localStorage
     localStorage.removeItem(DRAFT_KEY);
-    window.close();
 
-    // Fire and forget - save happens in background
+    // Close window immediately
+    await closeWindow();
+
+    // Save in background - file watcher will auto-refresh main window
+    console.log('[QuickCapture] Saving to journal:', trimmedText);
     appendToJournal(trimmedText).catch((err) => {
       // If save fails, restore draft so user doesn't lose content
       console.error('[QuickCapture] Save failed:', err);
@@ -48,12 +84,18 @@ export function QuickCaptureWindow() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log('[QuickCapture] Key pressed:', e.key, 'metaKey:', e.metaKey, 'ctrlKey:', e.ctrlKey);
+
     // Cmd/Ctrl+Enter to save
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      console.log('[QuickCapture] Cmd/Ctrl+Enter detected, calling handleSubmit');
       e.preventDefault();
-      handleSubmit();
+      void handleSubmit();
     }
-    if (e.key === 'Escape') window.close();
+    if (e.key === 'Escape') {
+      console.log('[QuickCapture] Escape pressed, closing window');
+      void closeWindow();
+    }
   };
 
   return (

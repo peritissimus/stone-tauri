@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { fuzzyMatch } from '../utils/fuzzyMatch';
-import type { ReactNode } from 'react';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { fuzzyMatch } from "../utils/fuzzyMatch";
+import type { ReactNode } from "react";
 
 const RECENT_LIMIT = 5;
 
@@ -32,9 +32,14 @@ interface CommandStoreState {
   getVisibleCommands: (query: string) => CommandWithMeta[];
 }
 
-const matchesContext = (command: CommandDefinition, contexts: Record<string, boolean>) => {
+const matchesContext = (
+  command: CommandDefinition,
+  contexts: Record<string, boolean>,
+) => {
   if (!command.when) return true;
-  const conditions = Array.isArray(command.when) ? command.when : [command.when];
+  const conditions = Array.isArray(command.when)
+    ? command.when
+    : [command.when];
   return conditions.every((key) => contexts[key]);
 };
 
@@ -44,7 +49,9 @@ const scoreCommand = (
   recentIndex: number,
 ): CommandWithMeta | null => {
   const titleScore = fuzzyMatch(query, command.title);
-  const subtitleScore = command.subtitle ? fuzzyMatch(query, command.subtitle) * 0.6 : 0;
+  const subtitleScore = command.subtitle
+    ? fuzzyMatch(query, command.subtitle) * 0.6
+    : 0;
   const baseScore = Math.max(titleScore, subtitleScore);
 
   if (baseScore <= 0) return null;
@@ -90,7 +97,10 @@ export const useCommandStore = create<CommandStoreState>()(
       recordUsage: (id) =>
         set((state) => {
           if (!state.commands[id]) return state;
-          const nextRecents = [id, ...state.recents.filter((existing) => existing !== id)];
+          const nextRecents = [
+            id,
+            ...state.recents.filter((existing) => existing !== id),
+          ];
           return { recents: nextRecents.slice(0, RECENT_LIMIT) };
         }),
 
@@ -117,7 +127,11 @@ export const useCommandStore = create<CommandStoreState>()(
           const remaining: CommandWithMeta[] = available
             .filter((cmd) => !recentSet.has(cmd.id))
             .sort((a, b) => a.title.localeCompare(b.title))
-            .map((command, index) => ({ ...command, score: 120 - index, isRecent: false }));
+            .map((command, index) => ({
+              ...command,
+              score: 120 - index,
+              isRecent: false,
+            }));
 
           return [...recentCommands, ...remaining];
         }
@@ -133,7 +147,7 @@ export const useCommandStore = create<CommandStoreState>()(
       },
     }),
     {
-      name: 'command-store',
+      name: "command-store",
       partialize: (state) => ({ recents: state.recents }),
     },
   ),
