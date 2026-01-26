@@ -11,11 +11,8 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
 
     // If window already exists, reposition and show it
     if let Some(window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
-        tracing::debug!("[QuickCapture] Window exists, repositioning and showing");
-
         // Reposition window on current monitor BEFORE showing
         if let Some(position) = center_position {
-            tracing::debug!("[QuickCapture] Setting position to ({}, {})", position.x, position.y);
             window.set_position(position)?;
         }
 
@@ -23,12 +20,10 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
         window.show()?;
         window.set_focus()?;
 
-        tracing::info!("[QuickCapture] Window shown and focused");
         return Ok(());
     }
 
     // Build window (first time)
-    tracing::debug!("[QuickCapture] Creating new window");
 
     let mut builder = WebviewWindowBuilder::new(
         app,
@@ -57,16 +52,12 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
 
     // Set position if we got one
     if let Some(position) = center_position {
-        tracing::debug!("[QuickCapture] Setting initial position to ({}, {})", position.x, position.y);
         builder = builder.position(position.x as f64, position.y as f64);
     } else {
-        tracing::warn!("[QuickCapture] No position calculated, using center");
         builder = builder.center();
     }
 
     let window = builder.build()?;
-
-    tracing::debug!("[QuickCapture] Window built, configuring...");
 
     // On macOS, explicitly tell window managers to not manage this window
     #[cfg(target_os = "macos")]
@@ -78,68 +69,43 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
             let ns_window = window.ns_window().unwrap() as id;
 
             // Set window level to floating (3 = NSFloatingWindowLevel)
-            // This makes it float above normal windows and tells tiling managers to ignore it
             ns_window.setLevel_(3);
 
-            // Tell window manager to not manage this window:
-            // - CanJoinAllSpaces: appears on all spaces/desktops
-            // - Stationary: doesn't move when switching spaces
-            // - IgnoresCycle: excluded from Cmd+Tab and window cycling
-            // - FullScreenAuxiliary: can appear alongside fullscreen windows
+            // CRITICAL: Prevent this window from activating the app
+            // This keeps other apps in focus and prevents main window from coming forward
+            ns_window.setHidesOnDeactivate_(cocoa::base::NO);
+
+            // Tell window manager to not manage this window
             let behavior = NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
                 | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
                 | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle
                 | NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary;
 
             ns_window.setCollectionBehavior_(behavior);
-
-            tracing::debug!("[QuickCapture] Set macOS window level=3 and collection behavior to prevent tiling manager (Aerospace/yabai) interference");
         }
     }
 
-    tracing::debug!("[QuickCapture] Showing window...");
-
-    // Show and focus after positioning and configuration
+    // Show the window WITHOUT activating the app
+    // This is critical to prevent the main window from coming to focus
     window.show()?;
 
-    // Verify position after showing
-    if let Ok(actual_position) = window.outer_position() {
-        tracing::info!(
-            "[QuickCapture] Window shown. Actual position: ({}, {})",
-            actual_position.x,
-            actual_position.y
-        );
+    // Focus the window, but don't activate the entire app
+    #[cfg(target_os = "macos")]
+    {
+        use cocoa::appkit::NSWindow;
+        use cocoa::base::id;
+
+        unsafe {
+            let ns_window = window.ns_window().unwrap() as id;
+            // Make key window without activating app (keeps other apps in focus)
+            ns_window.makeKeyWindow();
+        }
     }
 
-    window.set_focus()?;
-
-    // Clone window for async check
-    let window_clone = window.clone();
-    let target_pos = center_position;
-
-    // Check if position changes after a delay (indicates WM interference)
-    tokio::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        if let Ok(actual_position) = window_clone.outer_position() {
-            if let Some(target) = target_pos {
-                let x_diff = (actual_position.x - target.x).abs();
-                let y_diff = (actual_position.y - target.y).abs();
-                if x_diff > 10 || y_diff > 10 {
-                    tracing::warn!(
-                        "[QuickCapture] Window was MOVED by external force! Target: ({}, {}), Actual: ({}, {})",
-                        target.x,
-                        target.y,
-                        actual_position.x,
-                        actual_position.y
-                    );
-                } else {
-                    tracing::info!("[QuickCapture] Position stable at ({}, {})", actual_position.x, actual_position.y);
-                }
-            }
-        }
-    });
-
-    tracing::info!("[QuickCapture] Window created, shown, and focused");
+    #[cfg(not(target_os = "macos"))]
+    {
+        window.set_focus()?;
+    }
 
     Ok(())
 }
@@ -151,26 +117,10 @@ fn get_center_position(app: &AppHandle) -> Option<PhysicalPosition<i32>> {
 
     // Try to get cursor position
     let cursor_pos = app.cursor_position().ok();
-    tracing::debug!("[QuickCapture] Cursor position: {:?}", cursor_pos);
 
-    for monitor in &monitors {
-        let pos = monitor.position();
-        let size = monitor.size();
-        let name = monitor.name().map(|name| name.as_str()).unwrap_or("unknown");
-        tracing::debug!(
-            "[QuickCapture] Monitor '{}' pos=({}, {}), size={}x{}, scale_factor={}",
-            name,
-            pos.x,
-            pos.y,
-            size.width,
-            size.height,
-            monitor.scale_factor()
-        );
-    }
-
-    let (current_monitor, selection_method) = if let Some(cursor) = cursor_pos {
-        // Use physical bounds to avoid logical/scale mismatches.
-        if let Some(monitor) = monitors.iter().find(|monitor| {
+    let current_monitor = if let Some(cursor) = cursor_pos {
+        // Use physical bounds to avoid logical/scale mismatches
+        monitors.iter().find(|monitor| {
             let pos = monitor.position();
             let size = monitor.size();
             let right = pos.x + size.width as i32;
@@ -180,51 +130,20 @@ fn get_center_position(app: &AppHandle) -> Option<PhysicalPosition<i32>> {
             let right = right as f64;
             let bottom = bottom as f64;
             cursor.x >= left && cursor.x < right && cursor.y >= top && cursor.y < bottom
-        }) {
-            tracing::info!(
-                "[QuickCapture] Selected monitor under cursor at ({}, {})",
-                cursor.x,
-                cursor.y
-            );
-            (monitor.clone(), "cursor-physical")
-        } else if let Some(monitor) = primary_monitor.clone() {
-            tracing::info!("[QuickCapture] Cursor monitor not found, using primary monitor");
-            (monitor, "primary")
-        } else {
-            let monitor = monitors.into_iter().next()?;
-            tracing::info!("[QuickCapture] Using first available monitor as fallback");
-            (monitor, "fallback")
-        }
-    } else if let Some(monitor) = primary_monitor.clone() {
-        tracing::info!("[QuickCapture] Cursor position unavailable, using primary monitor");
-        (monitor, "primary")
+        })
+        .cloned()
+        .or_else(|| primary_monitor.clone())
+        .or_else(|| monitors.into_iter().next())
     } else {
-        let monitor = monitors.into_iter().next()?;
-        tracing::info!("[QuickCapture] Using first available monitor as fallback");
-        (monitor, "fallback")
-    };
+        primary_monitor.clone().or_else(|| monitors.into_iter().next())
+    }?;
 
     let size = current_monitor.size();
     let position = current_monitor.position();
 
-    tracing::info!(
-        "[QuickCapture] Monitor selected via '{}': position=({}, {}), size={}x{}",
-        selection_method,
-        position.x,
-        position.y,
-        size.width,
-        size.height
-    );
-
     // Calculate center position
     let x = position.x + (size.width as i32 / 2) - (WINDOW_WIDTH as i32 / 2);
     let y = position.y + (size.height as i32 / 2) - (WINDOW_HEIGHT as i32 / 2);
-
-    tracing::info!(
-        "[QuickCapture] Window will be positioned at ({}, {})",
-        x,
-        y
-    );
 
     Some(PhysicalPosition::new(x, y))
 }
