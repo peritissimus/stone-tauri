@@ -101,9 +101,7 @@ export function LayoutContainer({
         }
       />
 
-      <div
-        className={`flex h-screen pt-8 bg-background overflow-hidden ${className}`}
-      >
+      <div className={`flex h-screen pt-8  overflow-hidden ${className}`}>
         {/* Sidebar Panel */}
         {showSidebar && sidebar && (
           <ResizablePanel

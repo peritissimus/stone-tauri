@@ -16,9 +16,26 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
             window.set_position(position)?;
         }
 
-        // Show and focus the window
-        window.show()?;
-        window.set_focus()?;
+        // On macOS, show window without activating the app
+        #[cfg(target_os = "macos")]
+        {
+            use cocoa::appkit::NSWindow;
+            use cocoa::base::id;
+
+            unsafe {
+                let ns_window = window.ns_window().unwrap() as id;
+                // orderFrontRegardless shows the window without activating the app
+                ns_window.orderFrontRegardless();
+                // Make it key window to receive keyboard input
+                ns_window.makeKeyWindow();
+            }
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            window.show()?;
+            window.set_focus()?;
+        }
 
         return Ok(());
     }
@@ -39,8 +56,7 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
     .always_on_top(true)
     .focused(true) // Request focus immediately
     .visible(false) // Start hidden to position first
-    .accept_first_mouse(true) // Accept clicks without needing focus first
-    .content_protected(true); // Prevent screen recording (also hints to WM to not manage)
+    .accept_first_mouse(true); // Accept clicks without needing focus first
 
     // On macOS, prevent window from auto-repositioning by tiling managers (Aerospace, yabai, etc.)
     #[cfg(target_os = "macos")]
@@ -59,27 +75,36 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
 
     let window = builder.build()?;
 
-    // On macOS, explicitly tell window managers to not manage this window
+    // On macOS, configure as a Raycast-like floating panel that window managers ignore
     #[cfg(target_os = "macos")]
     {
         use cocoa::appkit::{NSWindow, NSWindowCollectionBehavior};
         use cocoa::base::id;
 
+        // Window levels (from CGWindowLevelKey):
+        // kCGNormalWindowLevel = 0
+        // kCGFloatingWindowLevel = 3
+        // kCGStatusWindowLevel = 25
+        // kCGPopUpMenuWindowLevel = 101
+        // kCGScreenSaverWindowLevel = 1000
+        const NS_POP_UP_MENU_WINDOW_LEVEL: i64 = 101;
+
         unsafe {
             let ns_window = window.ns_window().unwrap() as id;
 
-            // Set window level to floating (3 = NSFloatingWindowLevel)
-            ns_window.setLevel_(3);
+            // Set window level to popup menu level (101) - same as Raycast
+            // This level is ignored by tiling window managers like Aerospace, yabai, etc.
+            ns_window.setLevel_(NS_POP_UP_MENU_WINDOW_LEVEL);
 
             // CRITICAL: Prevent this window from activating the app
-            // This keeps other apps in focus and prevents main window from coming forward
             ns_window.setHidesOnDeactivate_(cocoa::base::NO);
 
             // Tell window manager to not manage this window
             let behavior = NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
                 | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
                 | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary;
+                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary
+                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorTransient;
 
             ns_window.setCollectionBehavior_(behavior);
         }
@@ -87,9 +112,6 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
 
     // Show the window WITHOUT activating the app
     // This is critical to prevent the main window from coming to focus
-    window.show()?;
-
-    // Focus the window, but don't activate the entire app
     #[cfg(target_os = "macos")]
     {
         use cocoa::appkit::NSWindow;
@@ -97,13 +119,16 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
 
         unsafe {
             let ns_window = window.ns_window().unwrap() as id;
-            // Make key window without activating app (keeps other apps in focus)
+            // orderFrontRegardless shows the window without activating the app
+            ns_window.orderFrontRegardless();
+            // Make key window to receive keyboard input without activating app
             ns_window.makeKeyWindow();
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
+        window.show()?;
         window.set_focus()?;
     }
 
