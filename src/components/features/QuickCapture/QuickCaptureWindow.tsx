@@ -99,7 +99,7 @@ export function QuickCaptureWindow() {
   };
 
   return (
-    <div className="h-screen w-screen p-2">
+    <div className="h-screen w-screen p-2 bg-background">
       <textarea
         ref={textareaRef}
         value={text}
