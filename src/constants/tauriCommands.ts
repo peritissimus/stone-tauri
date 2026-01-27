@@ -161,6 +161,7 @@ export const PERFORMANCE_COMMANDS = {
 export const QUICK_CAPTURE_COMMANDS = {
   APPEND_TO_JOURNAL: 'append_to_journal',
   HIDE: 'hide_quick_capture',
+  GET_STATE: 'get_quick_capture_state',
 } as const;
 
 // Helper function to get command name from old channel name

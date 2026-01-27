@@ -1,46 +1,335 @@
+//! Quick Capture Window - NSPanel Implementation using tauri-nspanel
+//!
+//! This module provides a floating quick capture window using tauri-nspanel
+//! with a robust state machine and proper synchronization.
+
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
 use tauri::{AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
+
+#[cfg(target_os = "macos")]
+use objc2::{ClassType, Message, runtime::NSObjectProtocol};
+#[cfg(target_os = "macos")]
+use tauri_nspanel::{panel, CollectionBehavior, ManagerExt, PanelLevel, StyleMask, WebviewWindowExt};
 
 const QUICK_CAPTURE_LABEL: &str = "quick-capture";
 const QUICK_CAPTURE_URL: &str = "index.html#/quick-capture";
 const WINDOW_WIDTH: f64 = 500.0;
 const WINDOW_HEIGHT: f64 = 140.0;
 
+/// Minimum time between state transitions (debouncing)
+const MIN_STATE_CHANGE_MS: u64 = 100;
+
+/// Panel state machine
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PanelState {
+    /// Panel not visible
+    Hidden,
+    /// Transitioning to visible
+    Showing,
+    /// Panel visible and ready
+    Visible,
+    /// Transitioning to hidden
+    Hiding,
+}
+
+impl std::fmt::Display for PanelState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PanelState::Hidden => write!(f, "Hidden"),
+            PanelState::Showing => write!(f, "Showing"),
+            PanelState::Visible => write!(f, "Visible"),
+            PanelState::Hiding => write!(f, "Hiding"),
+        }
+    }
+}
+
+/// Result of a panel operation
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct PanelOperationResult {
+    pub success: bool,
+    pub state: String,
+    pub error: Option<String>,
+}
+
+impl PanelOperationResult {
+    pub fn success(state: PanelState) -> Self {
+        Self {
+            success: true,
+            state: state.to_string(),
+            error: None,
+        }
+    }
+
+    pub fn error(state: PanelState, error: impl ToString) -> Self {
+        Self {
+            success: false,
+            state: state.to_string(),
+            error: Some(error.to_string()),
+        }
+    }
+}
+
+/// Quick capture panel state manager
+pub struct QuickCaptureState {
+    state: Mutex<PanelState>,
+    last_change: Mutex<Instant>,
+}
+
+impl Default for QuickCaptureState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl QuickCaptureState {
+    pub fn new() -> Self {
+        Self {
+            state: Mutex::new(PanelState::Hidden),
+            last_change: Mutex::new(Instant::now() - Duration::from_secs(1)),
+        }
+    }
+
+    /// Get current state
+    pub fn get_state(&self) -> PanelState {
+        *self.state.lock().unwrap()
+    }
+
+    /// Try to transition to a new state, respecting the state machine rules
+    pub fn try_transition(&self, target: PanelState) -> Result<PanelState, PanelState> {
+        let mut state = self.state.lock().unwrap();
+        let current = *state;
+
+        // Check debouncing
+        let mut last = self.last_change.lock().unwrap();
+        if last.elapsed() < Duration::from_millis(MIN_STATE_CHANGE_MS) {
+            tracing::debug!("Panel state change debounced: {:?} -> {:?}", current, target);
+            return Err(current);
+        }
+
+        // Validate transition
+        let valid = match (current, target) {
+            (PanelState::Hidden, PanelState::Showing) => true,
+            (PanelState::Showing, PanelState::Visible) => true,
+            (PanelState::Visible, PanelState::Hiding) => true,
+            (PanelState::Hiding, PanelState::Hidden) => true,
+            (PanelState::Hidden, PanelState::Visible) => true,
+            (PanelState::Showing, PanelState::Hiding) => true,
+            (s, t) if s == t => true,
+            _ => false,
+        };
+
+        if valid {
+            tracing::info!("Panel state: {} -> {}", current, target);
+            *state = target;
+            *last = Instant::now();
+            Ok(current)
+        } else {
+            tracing::warn!("Invalid panel state transition: {} -> {}", current, target);
+            Err(current)
+        }
+    }
+
+    /// Force state (for error recovery)
+    pub fn force_state(&self, new_state: PanelState) {
+        let mut state = self.state.lock().unwrap();
+        let mut last = self.last_change.lock().unwrap();
+        tracing::info!("Panel state forced: {} -> {}", *state, new_state);
+        *state = new_state;
+        *last = Instant::now();
+    }
+}
+
+// Define the panel type for macOS with canBecomeKeyWindow: true
+#[cfg(target_os = "macos")]
+panel!(QuickCapturePanel {
+    config: {
+        can_become_key_window: true,
+        can_become_main_window: false,
+        is_floating_panel: true
+    }
+});
+
+/// Show the quick capture window
+/// Wrapped with catch_unwind since this is called from global hotkey handler
 pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
-    // Get center position on current monitor FIRST
-    let center_position = get_center_position(app);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        show_impl(app)
+    }));
 
-    // If window already exists, reposition and show it
-    if let Some(window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
-        // Reposition window on current monitor BEFORE showing
-        if let Some(position) = center_position {
-            window.set_position(position)?;
+    match result {
+        Ok(inner_result) => inner_result,
+        Err(panic_info) => {
+            let msg = if let Some(s) = panic_info.downcast_ref::<&str>() {
+                s.to_string()
+            } else if let Some(s) = panic_info.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                "Unknown panic".to_string()
+            };
+            tracing::error!("Panic in show_quick_capture: {}", msg);
+            Err(tauri::Error::Anyhow(anyhow::anyhow!("Panic: {}", msg).into()))
         }
+    }
+}
 
-        // On macOS, show window without activating the app
-        #[cfg(target_os = "macos")]
-        {
-            use cocoa::appkit::NSWindow;
-            use cocoa::base::id;
+fn show_impl(app: &AppHandle) -> Result<(), tauri::Error> {
+    let state = get_or_create_state(app);
 
-            unsafe {
-                let ns_window = window.ns_window().unwrap() as id;
-                // orderFrontRegardless shows the window without activating the app
-                ns_window.orderFrontRegardless();
-                // Make it key window to receive keyboard input
-                ns_window.makeKeyWindow();
-            }
+    // Try to transition to Showing state
+    if let Err(current) = state.try_transition(PanelState::Showing) {
+        tracing::info!("Cannot show quick capture: already in state {}", current);
+        if current == PanelState::Visible {
+            return Ok(());
         }
-
-        #[cfg(not(target_os = "macos"))]
-        {
-            window.show()?;
-            window.set_focus()?;
-        }
-
         return Ok(());
     }
 
-    // Build window (first time)
+    // Get center position on current monitor
+    let center_position = get_center_position(app);
+
+    #[cfg(target_os = "macos")]
+    {
+        let result = show_macos(app, center_position);
+        match &result {
+            Ok(_) => {
+                state.force_state(PanelState::Visible);
+            }
+            Err(e) => {
+                tracing::error!("Failed to show quick capture: {}", e);
+                state.force_state(PanelState::Hidden);
+            }
+        }
+        return result;
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let result = show_other(app, center_position);
+        match &result {
+            Ok(_) => {
+                state.force_state(PanelState::Visible);
+            }
+            Err(e) => {
+                tracing::error!("Failed to show quick capture: {}", e);
+                state.force_state(PanelState::Hidden);
+            }
+        }
+        result
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn show_macos(
+    app: &AppHandle,
+    center_position: Option<PhysicalPosition<i32>>,
+) -> Result<(), tauri::Error> {
+    // Check if panel already exists in the panel manager
+    match app.get_webview_panel(QUICK_CAPTURE_LABEL) {
+        Ok(panel) => {
+            tracing::info!("Quick capture panel found, showing...");
+            // Reposition if needed
+            if let Some(position) = center_position {
+                if let Some(window) = panel.to_window() {
+                    let _ = window.set_position(position);
+                }
+            }
+            // Show the panel without activating the app
+            panel.order_front_regardless();
+            panel.make_key_window();
+            return Ok(());
+        }
+        Err(e) => {
+            tracing::info!("Panel not found in manager: {:?}", e);
+        }
+    }
+
+    // Check if window already exists but panel conversion failed previously
+    if let Some(existing_window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
+        tracing::info!("Window exists but panel not found, destroying old window...");
+        let _ = existing_window.destroy();
+        std::thread::sleep(Duration::from_millis(50));
+    }
+
+    tracing::info!("Creating new quick capture window...");
+
+    // Create a new window
+    let mut builder = WebviewWindowBuilder::new(
+        app,
+        QUICK_CAPTURE_LABEL,
+        WebviewUrl::App(QUICK_CAPTURE_URL.into()),
+    )
+    .title("Quick Capture")
+    .inner_size(WINDOW_WIDTH, WINDOW_HEIGHT)
+    .resizable(false)
+    .decorations(false)
+    .transparent(true)
+    .skip_taskbar(true)
+    .always_on_top(true)
+    .focused(false)
+    .visible(false)
+    .accept_first_mouse(true)
+    .hidden_title(true)
+    .title_bar_style(tauri::TitleBarStyle::Overlay);
+
+    if let Some(position) = center_position {
+        builder = builder.position(position.x as f64, position.y as f64);
+    } else {
+        builder = builder.center();
+    }
+
+    let window = builder.build()?;
+    tracing::info!("Window created successfully, converting to panel...");
+
+    // Convert to panel with our custom panel type that has canBecomeKeyWindow: true
+    let panel = window.to_panel::<QuickCapturePanel>().map_err(|e| {
+        tracing::error!("Failed to convert window to panel: {:?}", e);
+        tauri::Error::Anyhow(anyhow::anyhow!("Failed to convert to panel: {:?}", e).into())
+    })?;
+    tracing::info!("Panel conversion successful");
+
+    // Configure panel level - PopUpMenu level (101) is ignored by tiling WMs
+    panel.set_level(PanelLevel::PopUpMenu.value());
+
+    // CRITICAL: Set non-activating style mask to prevent app activation
+    panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
+
+    // Configure collection behavior for proper window management
+    panel.set_collection_behavior(
+        CollectionBehavior::new()
+            .can_join_all_spaces()
+            .stationary()
+            .ignores_cycle()
+            .full_screen_auxiliary()
+            .transient()
+            .into(),
+    );
+
+    // Don't hide when app deactivates
+    panel.set_hides_on_deactivate(false);
+
+    // Show the panel
+    panel.order_front_regardless();
+    panel.make_key_window();
+    tracing::info!("Quick capture panel shown successfully");
+
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn show_other(
+    app: &AppHandle,
+    center_position: Option<PhysicalPosition<i32>>,
+) -> Result<(), tauri::Error> {
+    if let Some(window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
+        if let Some(position) = center_position {
+            window.set_position(position)?;
+        }
+        window.show()?;
+        window.set_focus()?;
+        return Ok(());
+    }
 
     let mut builder = WebviewWindowBuilder::new(
         app,
@@ -54,84 +343,80 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
     .transparent(true)
     .skip_taskbar(true)
     .always_on_top(true)
-    .focused(true) // Request focus immediately
-    .visible(false) // Start hidden to position first
-    .accept_first_mouse(true); // Accept clicks without needing focus first
+    .focused(true)
+    .visible(true)
+    .accept_first_mouse(true);
 
-    // On macOS, prevent window from auto-repositioning by tiling managers (Aerospace, yabai, etc.)
-    #[cfg(target_os = "macos")]
-    {
-        builder = builder
-            .hidden_title(true)
-            .title_bar_style(tauri::TitleBarStyle::Overlay); // Use overlay style to avoid WM interception
-    }
-
-    // Set position if we got one
     if let Some(position) = center_position {
         builder = builder.position(position.x as f64, position.y as f64);
     } else {
         builder = builder.center();
     }
 
-    let window = builder.build()?;
+    builder.build()?;
+    Ok(())
+}
 
-    // On macOS, configure as a Raycast-like floating panel that window managers ignore
-    #[cfg(target_os = "macos")]
-    {
-        use cocoa::appkit::{NSWindow, NSWindowCollectionBehavior};
-        use cocoa::base::id;
+/// Hide the quick capture window
+pub fn hide(app: &AppHandle) -> PanelOperationResult {
+    let state = get_or_create_state(app);
 
-        // Window levels (from CGWindowLevelKey):
-        // kCGNormalWindowLevel = 0
-        // kCGFloatingWindowLevel = 3
-        // kCGStatusWindowLevel = 25
-        // kCGPopUpMenuWindowLevel = 101
-        // kCGScreenSaverWindowLevel = 1000
-        const NS_POP_UP_MENU_WINDOW_LEVEL: i64 = 101;
-
-        unsafe {
-            let ns_window = window.ns_window().unwrap() as id;
-
-            // Set window level to popup menu level (101) - same as Raycast
-            // This level is ignored by tiling window managers like Aerospace, yabai, etc.
-            ns_window.setLevel_(NS_POP_UP_MENU_WINDOW_LEVEL);
-
-            // CRITICAL: Prevent this window from activating the app
-            ns_window.setHidesOnDeactivate_(cocoa::base::NO);
-
-            // Tell window manager to not manage this window
-            let behavior = NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorTransient;
-
-            ns_window.setCollectionBehavior_(behavior);
+    if let Err(current) = state.try_transition(PanelState::Hiding) {
+        if current == PanelState::Hidden || current == PanelState::Hiding {
+            return PanelOperationResult::success(current);
         }
+        return PanelOperationResult::error(current, "Cannot hide from current state");
     }
 
-    // Show the window WITHOUT activating the app
-    // This is critical to prevent the main window from coming to focus
     #[cfg(target_os = "macos")]
     {
-        use cocoa::appkit::NSWindow;
-        use cocoa::base::id;
-
-        unsafe {
-            let ns_window = window.ns_window().unwrap() as id;
-            // orderFrontRegardless shows the window without activating the app
-            ns_window.orderFrontRegardless();
-            // Make key window to receive keyboard input without activating app
-            ns_window.makeKeyWindow();
+        let result = hide_macos(app);
+        match result {
+            Ok(_) => {
+                state.force_state(PanelState::Hidden);
+                PanelOperationResult::success(PanelState::Hidden)
+            }
+            Err(e) => {
+                state.force_state(PanelState::Hidden);
+                PanelOperationResult::error(PanelState::Hidden, e.to_string())
+            }
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        window.show()?;
-        window.set_focus()?;
+        let result = hide_other(app);
+        match result {
+            Ok(_) => {
+                state.force_state(PanelState::Hidden);
+                PanelOperationResult::success(PanelState::Hidden)
+            }
+            Err(e) => {
+                state.force_state(PanelState::Hidden);
+                PanelOperationResult::error(PanelState::Hidden, e.to_string())
+            }
+        }
     }
+}
 
+#[cfg(target_os = "macos")]
+fn hide_macos(app: &AppHandle) -> Result<(), tauri::Error> {
+    // Use run_on_main_thread for thread safety
+    let app_clone = app.clone();
+    app.run_on_main_thread(move || {
+        if let Ok(panel) = app_clone.get_webview_panel(QUICK_CAPTURE_LABEL) {
+            tracing::info!("Hiding quick capture panel on main thread");
+            panel.hide();
+        }
+    })?;
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn hide_other(app: &AppHandle) -> Result<(), tauri::Error> {
+    if let Some(window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
+        window.hide()?;
+    }
     Ok(())
 }
 
@@ -139,44 +424,42 @@ pub fn show(app: &AppHandle) -> Result<(), tauri::Error> {
 fn get_center_position(app: &AppHandle) -> Option<PhysicalPosition<i32>> {
     let monitors = app.available_monitors().ok()?;
     let primary_monitor = app.primary_monitor().ok().flatten();
-
-    // Try to get cursor position
     let cursor_pos = app.cursor_position().ok();
 
     let current_monitor = if let Some(cursor) = cursor_pos {
-        // Use physical bounds to avoid logical/scale mismatches
-        monitors.iter().find(|monitor| {
-            let pos = monitor.position();
-            let size = monitor.size();
-            let right = pos.x + size.width as i32;
-            let bottom = pos.y + size.height as i32;
-            let left = pos.x as f64;
-            let top = pos.y as f64;
-            let right = right as f64;
-            let bottom = bottom as f64;
-            cursor.x >= left && cursor.x < right && cursor.y >= top && cursor.y < bottom
-        })
-        .cloned()
-        .or_else(|| primary_monitor.clone())
-        .or_else(|| monitors.into_iter().next())
+        monitors
+            .iter()
+            .find(|monitor| {
+                let pos = monitor.position();
+                let size = monitor.size();
+                let right = pos.x + size.width as i32;
+                let bottom = pos.y + size.height as i32;
+                cursor.x >= pos.x as f64
+                    && cursor.x < right as f64
+                    && cursor.y >= pos.y as f64
+                    && cursor.y < bottom as f64
+            })
+            .cloned()
+            .or_else(|| primary_monitor.clone())
+            .or_else(|| monitors.into_iter().next())
     } else {
-        primary_monitor.clone().or_else(|| monitors.into_iter().next())
+        primary_monitor.or_else(|| monitors.into_iter().next())
     }?;
 
     let size = current_monitor.size();
     let position = current_monitor.position();
 
-    // Calculate center position
     let x = position.x + (size.width as i32 / 2) - (WINDOW_WIDTH as i32 / 2);
     let y = position.y + (size.height as i32 / 2) - (WINDOW_HEIGHT as i32 / 2);
 
     Some(PhysicalPosition::new(x, y))
 }
 
-pub fn hide(app: &AppHandle) -> Result<(), tauri::Error> {
-    if let Some(window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
-        let _ = window.hide();
-    }
+fn get_or_create_state(app: &AppHandle) -> tauri::State<'_, QuickCaptureState> {
+    app.state::<QuickCaptureState>()
+}
 
-    Ok(())
+pub fn get_state(app: &AppHandle) -> PanelState {
+    let state = get_or_create_state(app);
+    state.get_state()
 }

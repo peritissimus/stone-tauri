@@ -5,8 +5,14 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useQuickCaptureAPI } from "@/hooks/useQuickCaptureAPI";
 import { quickCaptureAPI } from "@/api/quickCaptureAPI";
+
+// Log to backend process
+const backendLog = (message: string, level?: "info" | "warn" | "error" | "debug") => {
+  invoke("log_from_frontend", { message, level }).catch(() => {});
+};
 
 const DRAFT_KEY = "quick-capture-draft";
 
@@ -16,37 +22,116 @@ export function QuickCaptureWindow() {
     // Restore draft on mount
     return localStorage.getItem(DRAFT_KEY) || "";
   });
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Close guard to prevent duplicate close calls
+  const isClosingRef = useRef(false);
+
   const closeWindow = async () => {
-    console.log("[QuickCapture] Attempting to hide window via backend...");
+    // Prevent duplicate close calls
+    if (isClosingRef.current) {
+      backendLog("QuickCapture: Close already in progress, ignoring");
+      return;
+    }
+
+    isClosingRef.current = true;
+    backendLog("QuickCapture: Attempting to hide window");
+
     try {
       const response = await quickCaptureAPI.hide();
-      if (response.success) {
-        console.log("[QuickCapture] Window hidden successfully");
+      if (response.success && response.data?.success) {
+        backendLog(`QuickCapture: Window hidden, state: ${response.data.state}`);
       } else {
-        console.error("[QuickCapture] Failed to hide window:", response.error);
+        backendLog(`QuickCapture: Failed to hide: ${response.data?.error || response.error}`, "error");
       }
     } catch (err) {
-      console.error("[QuickCapture] Failed to hide window:", err);
+      backendLog(`QuickCapture: Hide error: ${err}`, "error");
+    } finally {
+      // Reset the guard after a short delay to allow for re-open
+      setTimeout(() => {
+        isClosingRef.current = false;
+      }, 200);
     }
   };
 
-  // Auto-focus immediately
+  // Track window focus and auto-focus textarea
   useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
-
-  // Close when the window loses focus
-  useEffect(() => {
-    const handleBlur = () => {
-      console.log("[QuickCapture] Window blur detected, hiding");
-      void closeWindow();
+    const handleWindowFocus = () => {
+      backendLog("QuickCapture: Window gained focus");
+      setIsFocused(true);
+      textareaRef.current?.focus();
     };
 
-    window.addEventListener("blur", handleBlur);
-    return () => window.removeEventListener("blur", handleBlur);
+    const handleWindowBlur = () => {
+      backendLog("QuickCapture: Window lost focus");
+      setIsFocused(false);
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    window.addEventListener("blur", handleWindowBlur);
+
+    // Check initial focus state
+    if (document.hasFocus()) {
+      backendLog("QuickCapture: Window has initial focus");
+      setIsFocused(true);
+      textareaRef.current?.focus();
+    } else {
+      backendLog("QuickCapture: Window does NOT have initial focus", "warn");
+      setIsFocused(false);
+    }
+
+    return () => {
+      window.removeEventListener("focus", handleWindowFocus);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
   }, []);
+
+  // Single unified keyboard handler with capture phase for reliability
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close (no text submission)
+      if (e.key === "Escape") {
+        backendLog("QuickCapture: Escape pressed, closing");
+        e.preventDefault();
+        e.stopPropagation();
+        void closeWindow();
+        return;
+      }
+
+      // Cmd/Ctrl+Enter to save and close
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        backendLog("QuickCapture: Cmd/Ctrl+Enter pressed, saving");
+        e.preventDefault();
+        e.stopPropagation();
+
+        const trimmedText = text.trim();
+        if (trimmedText) {
+          // Clear the text state first
+          setText("");
+          // Clear draft from localStorage
+          localStorage.removeItem(DRAFT_KEY);
+          // Close window immediately
+          void closeWindow();
+          // Save in background
+          appendToJournal(trimmedText).catch((err) => {
+            backendLog(`QuickCapture: Save failed: ${err}`, "error");
+            // If save fails, restore draft so user doesn't lose content
+            localStorage.setItem(DRAFT_KEY, trimmedText);
+          });
+        }
+      }
+    };
+
+    // Use capture phase to intercept events before they bubble
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [text, appendToJournal]);
+
+  // NOTE: Blur event handler removed intentionally
+  // It caused accidental window closes during app switching (Cmd+Tab)
+  // The window should only close via explicit user actions (Escape, Cmd+Enter)
 
   // Save draft on text change (debounced naturally by React state)
   useEffect(() => {
@@ -56,56 +141,6 @@ export function QuickCaptureWindow() {
       localStorage.removeItem(DRAFT_KEY);
     }
   }, [text]);
-
-  const handleSubmit = async () => {
-    console.log("[QuickCapture] handleSubmit called with text:", text);
-    const trimmedText = text.trim();
-    if (!trimmedText) {
-      console.log("[QuickCapture] No text to submit, returning");
-      return;
-    }
-
-    // Clear the text state first
-    setText("");
-
-    // Clear draft from localStorage
-    localStorage.removeItem(DRAFT_KEY);
-
-    // Close window immediately
-    await closeWindow();
-
-    // Save in background - file watcher will auto-refresh main window
-    console.log("[QuickCapture] Saving to journal:", trimmedText);
-    appendToJournal(trimmedText).catch((err) => {
-      // If save fails, restore draft so user doesn't lose content
-      console.error("[QuickCapture] Save failed:", err);
-      localStorage.setItem(DRAFT_KEY, trimmedText);
-    });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    console.log(
-      "[QuickCapture] Key pressed:",
-      e.key,
-      "metaKey:",
-      e.metaKey,
-      "ctrlKey:",
-      e.ctrlKey,
-    );
-
-    // Cmd/Ctrl+Enter to save
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      console.log(
-        "[QuickCapture] Cmd/Ctrl+Enter detected, calling handleSubmit",
-      );
-      e.preventDefault();
-      void handleSubmit();
-    }
-    if (e.key === "Escape") {
-      console.log("[QuickCapture] Escape pressed, closing window");
-      void closeWindow();
-    }
-  };
 
   // Detect dark mode
   const isDark =
@@ -137,6 +172,9 @@ export function QuickCaptureWindow() {
     padding: 8,
     backgroundColor: colors.background,
     borderRadius: 12,
+    border: isFocused ? "2px solid hsl(210 100% 50%)" : "2px solid transparent",
+    boxSizing: "border-box",
+    transition: "border-color 0.15s ease",
   };
 
   const textareaStyle: React.CSSProperties = {
@@ -171,9 +209,7 @@ export function QuickCaptureWindow() {
         ref={textareaRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
         placeholder="What's on your mind? (Cmd+Enter to save)"
-        autoFocus
         rows={3}
         style={textareaStyle}
         className="quick-capture-textarea"

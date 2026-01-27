@@ -4,10 +4,16 @@
 
 import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { invoke } from '@tauri-apps/api/core';
 import type { Editor } from '@tiptap/react';
 import { Sidebar } from '@/components/features/navigation';
 import type { NoteEditorHandle } from '@/components/features/Editor/NoteEditor';
 import { LayoutContainer, SidebarPanel, MainContentArea } from '@/components/composites';
+
+// Log to backend process
+const backendLog = (message: string, level?: 'info' | 'warn' | 'error' | 'debug') => {
+  invoke('log_from_frontend', { message, level }).catch(() => {});
+};
 
 // Lazy load heavy components
 const NoteEditor = lazy(() =>
@@ -123,6 +129,32 @@ export function MainLayout() {
 
   // Enable document autosave
   useDocumentAutosave(30000);
+
+  // Track window focus for debugging
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      backendLog('MainWindow: Window gained focus');
+    };
+
+    const handleWindowBlur = () => {
+      backendLog('MainWindow: Window lost focus');
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('blur', handleWindowBlur);
+
+    // Log initial state
+    if (document.hasFocus()) {
+      backendLog('MainWindow: Has initial focus');
+    } else {
+      backendLog('MainWindow: Does NOT have initial focus');
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
 
   // Helper to create a note in a specific folder
   const createNoteInFolder = async (folderPath: string) => {

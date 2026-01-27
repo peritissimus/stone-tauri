@@ -127,6 +127,7 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
     app.manage(container.file_watcher);
     app.manage(db_manager);
     app.manage(performance_commands::PerformanceState::new());
+    app.manage(adapters::inbound::ui::quick_capture_window::QuickCaptureState::new());
 
     tracing::info!("Application initialized successfully");
 
@@ -135,11 +136,18 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build());
+
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.plugin(tauri_nspanel::init());
+    }
+
+    builder
         .setup(|app| {
             tauri::async_runtime::block_on(async {
                 setup_app(app).await.map_err(|e| {
@@ -250,6 +258,8 @@ pub fn run() {
             // Quick capture commands
             quick_capture_commands::append_to_journal,
             quick_capture_commands::hide_quick_capture,
+            quick_capture_commands::get_quick_capture_state,
+            quick_capture_commands::log_from_frontend,
             // Task commands
             task_commands::get_all_tasks,
             task_commands::get_note_tasks,
