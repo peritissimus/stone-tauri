@@ -14,7 +14,6 @@ pub mod application;
 pub mod domain;
 pub mod infrastructure;
 pub mod shared;
-mod quick_capture_window;
 
 // Re-export for convenience
 pub use domain::*;
@@ -62,7 +61,7 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
         .global_shortcut()
         .on_shortcut("Alt+Space", move |_app, _shortcut, event| {
             if event.state == ShortcutState::Pressed {
-                if let Err(error) = quick_capture_window::show(&shortcut_app) {
+                if let Err(error) = adapters::inbound::ui::quick_capture_window::show(&shortcut_app) {
                     tracing::warn!("Failed to show quick capture window: {}", error);
                 }
             }

@@ -3,9 +3,8 @@
 use tauri::{AppHandle, State};
 
 use crate::{
-    adapters::inbound::app_state::AppState,
+    adapters::inbound::{app_state::AppState, ui::quick_capture_window},
     domain::ports::inbound::AppendToJournalResponse,
-    quick_capture_window,
 };
 
 #[tauri::command]

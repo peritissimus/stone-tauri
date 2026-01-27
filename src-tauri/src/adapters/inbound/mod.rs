@@ -26,3 +26,6 @@ pub mod performance_commands;
 
 // Re-exports
 pub use app_state::AppState;
+
+// UI adapters
+pub mod ui;
