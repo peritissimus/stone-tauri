@@ -63,12 +63,12 @@ impl TokioEventPublisher {
 
             // Emit to frontend
             if let Err(e) = app_handle.emit(event_type, event) {
-                eprintln!("Failed to emit event to frontend: {}", e);
+                tracing::error!("Failed to emit event '{}' to frontend: {}", event_type, e);
             }
 
             // Also emit to a general "domain-event" channel
             if let Err(e) = app_handle.emit("domain-event", event) {
-                eprintln!("Failed to emit domain event to frontend: {}", e);
+                tracing::error!("Failed to emit domain event to frontend: {}", e);
             }
         }
     }

@@ -11,7 +11,7 @@ use crate::domain::{
     errors::{DomainError, DomainResult},
     ports::{
         inbound::{AppendToJournalResponse, QuickCaptureUseCases},
-        outbound::{FileStorage, NoteRepository, WorkspaceRepository},
+        outbound::{DomainEvent, EventPublisher, FileStorage, NoteRepository, WorkspaceRepository},
     },
 };
 
@@ -20,6 +20,7 @@ pub struct QuickCaptureUseCasesImpl {
     note_repository: Arc<dyn NoteRepository>,
     workspace_repository: Arc<dyn WorkspaceRepository>,
     file_storage: Arc<dyn FileStorage>,
+    event_publisher: Arc<dyn EventPublisher>,
 }
 
 impl QuickCaptureUseCasesImpl {
@@ -27,11 +28,13 @@ impl QuickCaptureUseCasesImpl {
         note_repository: Arc<dyn NoteRepository>,
         workspace_repository: Arc<dyn WorkspaceRepository>,
         file_storage: Arc<dyn FileStorage>,
+        event_publisher: Arc<dyn EventPublisher>,
     ) -> Self {
         Self {
             note_repository,
             workspace_repository,
             file_storage,
+            event_publisher,
         }
     }
 }
@@ -98,6 +101,14 @@ impl QuickCaptureUseCases for QuickCaptureUseCasesImpl {
             // Update note timestamp - ✅ ASYNC
             self.note_repository.save(&journal_note).await?;
 
+            // Emit note:updated event for immediate UI refresh
+            self.event_publisher.publish(DomainEvent::NoteUpdated {
+                timestamp: chrono::Utc::now(),
+                id: journal_note.id.clone(),
+                title: journal_note.title.clone(),
+                changes: vec!["content".to_string()],
+            });
+
             return Ok(AppendToJournalResponse {
                 note_id: journal_note.id,
                 appended: true,
@@ -130,6 +141,14 @@ impl QuickCaptureUseCases for QuickCaptureUseCasesImpl {
             // Save note - ✅ ASYNC
             self.note_repository.save(&note).await?;
 
+            // Emit note:updated event for immediate UI refresh
+            self.event_publisher.publish(DomainEvent::NoteUpdated {
+                timestamp: chrono::Utc::now(),
+                id: note.id.clone(),
+                title: note.title.clone(),
+                changes: vec!["content".to_string()],
+            });
+
             return Ok(AppendToJournalResponse {
                 note_id: note.id,
                 appended: true,
@@ -161,6 +180,16 @@ impl QuickCaptureUseCases for QuickCaptureUseCasesImpl {
 
         // Save note - ✅ ASYNC
         self.note_repository.save(&note).await?;
+
+        // Emit note:created event for new journal entries
+        self.event_publisher.publish(DomainEvent::NoteCreated {
+            timestamp: chrono::Utc::now(),
+            id: note.id.clone(),
+            title: note.title.clone(),
+            workspace_id: note.workspace_id.clone(),
+            notebook_id: note.notebook_id.clone(),
+            file_path: note.file_path.clone(),
+        });
 
         Ok(AppendToJournalResponse {
             note_id: note.id,

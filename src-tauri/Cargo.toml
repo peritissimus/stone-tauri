@@ -1,8 +1,8 @@
 [package]
-name = "stone-tauri"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "stone"
+version = "0.2.29"
+description = "Production-ready note-taking desktop application"
+authors = ["Stone Team"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

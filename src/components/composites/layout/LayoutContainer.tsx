@@ -2,19 +2,18 @@
  * LayoutContainer Component - Main layout structure with resizable panels
  */
 
-import { ResizablePanel } from './ResizablePanel';
-import React from 'react';
-import { toast } from 'sonner';
-import { useModals } from '@/hooks/useUI';
-import { useNoteAPI } from '@/hooks/useNoteAPI';
-import { Heading3 } from '@/components/base/ui/text';
-import { logger } from '@/utils/logger';
-import { Gear, ArrowsClockwise } from 'phosphor-react';
-import { Header, IconButton, ControlGroup } from '@/components/composites';
-import { useWorkspaceAPI } from '@/hooks/useWorkspaceAPI';
-import { useFileTreeAPI } from '@/hooks/useFileTreeAPI';
-import { useFileTreeStore } from '@/stores/fileTreeStore';
-import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
+import { ResizablePanel } from "./ResizablePanel";
+import React from "react";
+import { toast } from "sonner";
+import { useModals } from "@/hooks/useUI";
+import { useNoteAPI } from "@/hooks/useNoteAPI";
+import { logger } from "@/utils/logger";
+import { Gear, ArrowsClockwise } from "phosphor-react";
+import { Header, IconButton, ControlGroup } from "@/components/composites";
+import { useWorkspaceAPI } from "@/hooks/useWorkspaceAPI";
+import { useFileTreeAPI } from "@/hooks/useFileTreeAPI";
+import { useFileTreeStore } from "@/stores/fileTreeStore";
+import { formatShortcut } from "@/hooks/useKeyboardShortcuts";
 
 export interface LayoutContainerProps {
   sidebar?: React.ReactNode;
@@ -48,7 +47,7 @@ export function LayoutContainer({
   mainContent,
   overlayContent,
 
-  className = '',
+  className = "",
 }: LayoutContainerProps) {
   const { openSettings } = useModals();
   const { loadFileTree } = useFileTreeAPI();
@@ -61,7 +60,7 @@ export function LayoutContainer({
       <Header
         size="normal"
         className="fixed top-0 left-0 right-0 z-10"
-        left={<Heading3 className="ml-[64px] text-xs">Stone</Heading3>}
+        left={<div className="ml-[64px] text-xs"></div>}
         right={
           <ControlGroup gap="sm" background="bg-transparent">
             <IconButton
@@ -73,7 +72,7 @@ export function LayoutContainer({
                 try {
                   const res = await syncWorkspace();
                   if (res.success) {
-                    logger.info('Sync complete', res.data);
+                    logger.info("Sync complete", res.data);
                     await loadWorkspaces();
                     await loadFileTree();
                     if (activeFolder) {
@@ -82,12 +81,12 @@ export function LayoutContainer({
                       await loadNotes();
                     }
                   } else {
-                    logger.error('Sync failed', res.error);
-                    toast.error(res.error?.message || 'Sync failed');
+                    logger.error("Sync failed", res.error);
+                    toast.error(res.error?.message || "Sync failed");
                   }
                 } catch (e) {
-                  logger.error('Sync error', e);
-                  toast.error('Sync failed');
+                  logger.error("Sync error", e);
+                  toast.error("Sync failed");
                 }
               }}
             />
@@ -95,14 +94,16 @@ export function LayoutContainer({
               size="compact"
               icon={<Gear size={12} />}
               label="Settings"
-              tooltip={`Settings (${formatShortcut(',', true)})`}
+              tooltip={`Settings (${formatShortcut(",", true)})`}
               onClick={openSettings}
             />
           </ControlGroup>
         }
       />
 
-      <div className={`flex h-screen pt-8 bg-background overflow-hidden ${className}`}>
+      <div
+        className={`flex h-screen pt-8 bg-background overflow-hidden ${className}`}
+      >
         {/* Sidebar Panel */}
         {showSidebar && sidebar && (
           <ResizablePanel
@@ -130,7 +131,9 @@ export function LayoutContainer({
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0">{mainContent}</div>
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+          {mainContent}
+        </div>
 
         {/* Overlay Content (modals, etc.) */}
         {overlayContent}

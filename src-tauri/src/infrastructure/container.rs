@@ -54,7 +54,7 @@ impl Container {
         let database_service = Arc::new(DieselDatabaseService::new(pool.clone(), database_path));
 
         // Event publisher and file watcher
-        let event_publisher = Arc::new(TokioEventPublisher::new());
+        let event_publisher = Arc::new(TokioEventPublisher::with_tauri(app_handle.clone()));
         let event_publisher_opt: Option<Arc<dyn crate::domain::ports::outbound::EventPublisher>> = Some(event_publisher.clone());
         let file_watcher = Arc::new(NotifyFileWatcher::new(event_publisher.clone()));
 
@@ -130,6 +130,7 @@ impl Container {
             note_repository.clone(),
             workspace_repository.clone(),
             file_storage.clone(),
+            event_publisher.clone(),
         ));
 
         let task_usecases = Arc::new(TaskUseCasesImpl::new(

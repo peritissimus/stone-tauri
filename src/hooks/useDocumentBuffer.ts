@@ -123,8 +123,6 @@ export function useDocumentBuffer({
     reloadTimerRef.current = setTimeout(async () => {
       if (loadingNotes.has(noteId)) return;
 
-      logger.info('[useDocumentBuffer] External update detected, reloading:', noteId);
-
       const { removeBuffer } = useDocumentBufferStore.getState();
       removeBuffer(noteId);
 
@@ -135,7 +133,6 @@ export function useDocumentBuffer({
           editor.commands.setContent(response.data.content);
           const jsonContent = editor.getJSON();
           setBuffer(noteId, jsonContent);
-          logger.info('[useDocumentBuffer] Reloaded content from external update');
         }
       } catch (error) {
         logger.error('[useDocumentBuffer] Failed to reload after external update:', error);

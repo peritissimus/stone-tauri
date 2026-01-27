@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "stone-tauri",
-  "version": "0.1.0",
-  "identifier": "com.stone-tauri.app",
+  "productName": "Stone",
+  "version": "0.2.29",
+  "identifier": "com.stone.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "stone-tauri",
+        "title": "Stone",
         "width": 800,
         "height": 600,
         "transparent": true,
@@ -47,6 +47,11 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "Productivity",
+    "shortDescription": "Production-ready note-taking desktop application",
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
   }
 }

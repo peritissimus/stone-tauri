@@ -173,64 +173,66 @@ export function getCommandFromChannel(channel: string): string {
   return `${snakeCaseAction}_${entity}`;
 }
 
-// Event names (Tauri uses kebab-case for events)
+// Event names (Backend uses colon notation like "note:updated")
 export const EVENTS = {
   // Workspace events
-  WORKSPACE_CREATED: 'workspace-created',
-  WORKSPACE_UPDATED: 'workspace-updated',
-  WORKSPACE_DELETED: 'workspace-deleted',
-  WORKSPACE_SWITCHED: 'workspace-switched',
-  WORKSPACE_SCANNED: 'workspace-scanned',
-  FILE_CHANGED: 'file-changed',
-  FILE_CREATED: 'file-created',
-  FILE_DELETED: 'file-deleted',
+  WORKSPACE_CREATED: 'workspace:created',
+  WORKSPACE_UPDATED: 'workspace:updated',
+  WORKSPACE_DELETED: 'workspace:deleted',
+  WORKSPACE_ACTIVATED: 'workspace:activated',
+  WORKSPACE_SWITCHED: 'workspace:switched',
+  WORKSPACE_SCANNED: 'workspace:scanned',
+  FILE_CHANGED: 'file:changed',
+  FILE_CREATED: 'file:created',
+  FILE_DELETED: 'file:deleted',
+  FILE_SYNCED: 'file:synced',
 
   // Note events
-  NOTE_CREATED: 'note-created',
-  NOTE_UPDATED: 'note-updated',
-  NOTE_DELETED: 'note-deleted',
-  NOTE_VERSION_RESTORED: 'note-version-restored',
+  NOTE_CREATED: 'note:created',
+  NOTE_UPDATED: 'note:updated',
+  NOTE_DELETED: 'note:deleted',
+  NOTE_VERSION_RESTORED: 'note:version-restored',
 
   // Notebook events
-  NOTEBOOK_CREATED: 'notebook-created',
-  NOTEBOOK_UPDATED: 'notebook-updated',
-  NOTEBOOK_DELETED: 'notebook-deleted',
+  NOTEBOOK_CREATED: 'notebook:created',
+  NOTEBOOK_UPDATED: 'notebook:updated',
+  NOTEBOOK_DELETED: 'notebook:deleted',
 
   // Tag events
-  TAG_CREATED: 'tag-created',
-  TAG_UPDATED: 'tag-updated',
-  TAG_DELETED: 'tag-deleted',
+  TAG_CREATED: 'tag:created',
+  TAG_UPDATED: 'tag:updated',
+  TAG_DELETED: 'tag:deleted',
 
   // Attachment events
-  ATTACHMENT_ADDED: 'attachment-added',
-  ATTACHMENT_DELETED: 'attachment-deleted',
+  ATTACHMENT_ADDED: 'attachment:added',
+  ATTACHMENT_DELETED: 'attachment:deleted',
 
   // Database events
-  DB_MIGRATION_PROGRESS: 'db-migration-progress',
-  DB_MIGRATION_COMPLETE: 'db-migration-complete',
-  DB_BACKUP_PROGRESS: 'db-backup-progress',
-  DB_BACKUP_COMPLETE: 'db-backup-complete',
-  DB_RESTORE_PROGRESS: 'db-restore-progress',
-  DB_RESTORE_COMPLETE: 'db-restore-complete',
-  DB_VACUUM_PROGRESS: 'db-vacuum-progress',
-  DB_VACUUM_COMPLETE: 'db-vacuum-complete',
+  DB_MIGRATION_PROGRESS: 'db:migration:progress',
+  DB_MIGRATION_COMPLETE: 'db:migration:complete',
+  DB_BACKUP_PROGRESS: 'db:backup:progress',
+  DB_BACKUP_COMPLETE: 'db:backup:complete',
+  DB_RESTORE_PROGRESS: 'db:restore:progress',
+  DB_RESTORE_COMPLETE: 'db:restore:complete',
+  DB_VACUUM_PROGRESS: 'db:vacuum:progress',
+  DB_VACUUM_COMPLETE: 'db:vacuum:complete',
 
   // Settings events
-  SETTINGS_CHANGED: 'settings-changed',
+  SETTINGS_CHANGED: 'settings:changed',
 
   // Topic events
-  TOPIC_CREATED: 'topic-created',
-  TOPIC_UPDATED: 'topic-updated',
-  TOPIC_DELETED: 'topic-deleted',
-  NOTE_CLASSIFIED: 'note-classified',
-  EMBEDDING_PROGRESS: 'embedding-progress',
+  TOPIC_CREATED: 'topic:created',
+  TOPIC_UPDATED: 'topic:updated',
+  TOPIC_DELETED: 'topic:deleted',
+  NOTE_CLASSIFIED: 'note:classified',
+  EMBEDDING_PROGRESS: 'embedding:progress',
 
   // ML Service status events
-  ML_STATUS_CHANGED: 'ml-status-changed',
-  ML_OPERATION_STARTED: 'ml-operation-started',
-  ML_OPERATION_PROGRESS: 'ml-operation-progress',
-  ML_OPERATION_COMPLETED: 'ml-operation-completed',
-  ML_OPERATION_ERROR: 'ml-operation-error',
+  ML_STATUS_CHANGED: 'ml:status:changed',
+  ML_OPERATION_STARTED: 'ml:operation:started',
+  ML_OPERATION_PROGRESS: 'ml:operation:progress',
+  ML_OPERATION_COMPLETED: 'ml:operation:completed',
+  ML_OPERATION_ERROR: 'ml:operation:error',
 } as const;
 
 // Export all command constants for validation
