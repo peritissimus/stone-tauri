@@ -6,7 +6,7 @@
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use tauri::{AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg(target_os = "macos")]
 use objc2::{ClassType, Message, runtime::NSObjectProtocol};
@@ -238,6 +238,8 @@ fn show_macos(
             // Show the panel without activating the app
             panel.order_front_regardless();
             panel.make_key_window();
+            // Emit event to frontend
+            let _ = app.emit("quick-capture:state-changed", "Visible");
             return Ok(());
         }
         Err(e) => {
@@ -246,10 +248,45 @@ fn show_macos(
     }
 
     // Check if window already exists but panel conversion failed previously
+    // Instead of destroying, try to convert the existing window to a panel
     if let Some(existing_window) = app.get_webview_window(QUICK_CAPTURE_LABEL) {
-        tracing::info!("Window exists but panel not found, destroying old window...");
-        let _ = existing_window.destroy();
-        std::thread::sleep(Duration::from_millis(50));
+        tracing::info!("Window exists but panel not found, trying to convert existing window...");
+
+        // Reposition if needed
+        if let Some(position) = center_position {
+            let _ = existing_window.set_position(position);
+        }
+
+        // Try to convert existing window to panel
+        match existing_window.to_panel::<QuickCapturePanel>() {
+            Ok(panel) => {
+                tracing::info!("Successfully converted existing window to panel");
+                // Configure panel
+                panel.set_level(PanelLevel::PopUpMenu.value());
+                panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
+                panel.set_collection_behavior(
+                    CollectionBehavior::new()
+                        .can_join_all_spaces()
+                        .stationary()
+                        .ignores_cycle()
+                        .full_screen_auxiliary()
+                        .transient()
+                        .into(),
+                );
+                panel.set_hides_on_deactivate(false);
+                panel.order_front_regardless();
+                panel.make_key_window();
+                // Emit event to frontend
+                let _ = app.emit("quick-capture:state-changed", "Visible");
+                return Ok(());
+            }
+            Err(e) => {
+                tracing::warn!("Failed to convert existing window to panel: {:?}, will destroy and recreate", e);
+                // Destroy and wait longer
+                let _ = existing_window.destroy();
+                std::thread::sleep(Duration::from_millis(150));
+            }
+        }
     }
 
     tracing::info!("Creating new quick capture window...");
@@ -313,6 +350,9 @@ fn show_macos(
     panel.order_front_regardless();
     panel.make_key_window();
     tracing::info!("Quick capture panel shown successfully");
+
+    // Emit event to frontend
+    let _ = app.emit("quick-capture:state-changed", "Visible");
 
     Ok(())
 }
@@ -403,10 +443,31 @@ pub fn hide(app: &AppHandle) -> PanelOperationResult {
 fn hide_macos(app: &AppHandle) -> Result<(), tauri::Error> {
     // Use run_on_main_thread for thread safety
     let app_clone = app.clone();
+    let app_for_emit = app.clone();
     app.run_on_main_thread(move || {
-        if let Ok(panel) = app_clone.get_webview_panel(QUICK_CAPTURE_LABEL) {
-            tracing::info!("Hiding quick capture panel on main thread");
-            panel.hide();
+        // Try panel first, fall back to window
+        let hidden = match app_clone.get_webview_panel(QUICK_CAPTURE_LABEL) {
+            Ok(panel) => {
+                tracing::info!("Hiding via panel.hide()");
+                panel.hide();
+                true
+            }
+            Err(_) => {
+                // Panel not in manager, try hiding via window
+                if let Some(window) = app_clone.get_webview_window(QUICK_CAPTURE_LABEL) {
+                    tracing::info!("Hiding via window.hide()");
+                    let _ = window.hide();
+                    true
+                } else {
+                    tracing::warn!("Neither panel nor window found during hide");
+                    false
+                }
+            }
+        };
+
+        if hidden {
+            // Emit event only if we actually hid something
+            let _ = app_for_emit.emit("quick-capture:state-changed", "Hidden");
         }
     })?;
     Ok(())

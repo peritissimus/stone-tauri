@@ -6,6 +6,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useQuickCaptureAPI } from "@/hooks/useQuickCaptureAPI";
 import { quickCaptureAPI } from "@/api/quickCaptureAPI";
 
@@ -25,17 +26,46 @@ export function QuickCaptureWindow() {
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Close guard to prevent duplicate close calls
-  const isClosingRef = useRef(false);
+  // Track window visibility - synced from backend events (single source of truth)
+  const isVisibleRef = useRef(false);
+
+  // Listen for backend state changes - this is the ONLY way visibility changes
+  useEffect(() => {
+    const setupListener = async () => {
+      const unlisten = await listen<string>("quick-capture:state-changed", (event) => {
+        const newState = event.payload;
+        backendLog(`QuickCapture: Backend state changed to ${newState}`);
+
+        if (newState === "Visible") {
+          isVisibleRef.current = true;
+          setIsFocused(true);
+          // Focus the textarea when window becomes visible
+          setTimeout(() => textareaRef.current?.focus(), 50);
+        } else if (newState === "Hidden") {
+          isVisibleRef.current = false;
+          setIsFocused(false);
+        }
+      });
+
+      return unlisten;
+    };
+
+    const unlistenPromise = setupListener();
+
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, []);
 
   const closeWindow = async () => {
-    // Prevent duplicate close calls
-    if (isClosingRef.current) {
-      backendLog("QuickCapture: Close already in progress, ignoring");
+    // Only close if we're visible (tracked from backend events)
+    if (!isVisibleRef.current) {
+      backendLog("QuickCapture: Not visible, ignoring close");
       return;
     }
 
-    isClosingRef.current = true;
+    // Mark as not visible immediately to prevent duplicate calls
+    isVisibleRef.current = false;
     backendLog("QuickCapture: Attempting to hide window");
 
     try {
@@ -47,39 +77,47 @@ export function QuickCaptureWindow() {
       }
     } catch (err) {
       backendLog(`QuickCapture: Hide error: ${err}`, "error");
-    } finally {
-      // Reset the guard after a short delay to allow for re-open
-      setTimeout(() => {
-        isClosingRef.current = false;
-      }, 200);
     }
   };
 
-  // Track window focus and auto-focus textarea
+  // Track window focus for UI only (blue border indicator)
+  // Visibility is tracked separately via backend events
   useEffect(() => {
     const handleWindowFocus = () => {
-      backendLog("QuickCapture: Window gained focus");
-      setIsFocused(true);
-      textareaRef.current?.focus();
+      backendLog("QuickCapture: Window focus event");
+      // Only update UI if we're actually visible
+      if (isVisibleRef.current) {
+        setIsFocused(true);
+        textareaRef.current?.focus();
+      }
     };
 
     const handleWindowBlur = () => {
-      backendLog("QuickCapture: Window lost focus");
+      backendLog("QuickCapture: Window blur event");
       setIsFocused(false);
     };
 
     window.addEventListener("focus", handleWindowFocus);
     window.addEventListener("blur", handleWindowBlur);
 
-    // Check initial focus state
-    if (document.hasFocus()) {
-      backendLog("QuickCapture: Window has initial focus");
-      setIsFocused(true);
-      textareaRef.current?.focus();
-    } else {
-      backendLog("QuickCapture: Window does NOT have initial focus", "warn");
-      setIsFocused(false);
-    }
+    // Check initial state from backend
+    const checkInitialState = async () => {
+      try {
+        const response = await quickCaptureAPI.getState();
+        const backendState = response.data;
+        backendLog(`QuickCapture: Initial backend state is ${backendState}`);
+        if (backendState === "Visible") {
+          isVisibleRef.current = true;
+          setIsFocused(document.hasFocus());
+          if (document.hasFocus()) {
+            textareaRef.current?.focus();
+          }
+        }
+      } catch {
+        backendLog("QuickCapture: Could not get initial state", "warn");
+      }
+    };
+    checkInitialState();
 
     return () => {
       window.removeEventListener("focus", handleWindowFocus);
@@ -92,7 +130,7 @@ export function QuickCaptureWindow() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape to close (no text submission)
       if (e.key === "Escape") {
-        backendLog("QuickCapture: Escape pressed, closing");
+        backendLog(`QuickCapture: Escape key pressed (isVisible=${isVisibleRef.current})`);
         e.preventDefault();
         e.stopPropagation();
         void closeWindow();
@@ -208,7 +246,11 @@ export function QuickCaptureWindow() {
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          const newText = e.target.value;
+          backendLog(`QuickCapture: Typing - text length: ${newText.length}`);
+          setText(newText);
+        }}
         placeholder="What's on your mind? (Cmd+Enter to save)"
         rows={3}
         style={textareaStyle}
