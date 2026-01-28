@@ -17,7 +17,6 @@ export function QuickCaptureWindow() {
     // Restore draft on mount
     return localStorage.getItem(DRAFT_KEY) || "";
   });
-  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Track window visibility - synced from backend events (single source of truth)
@@ -31,12 +30,10 @@ export function QuickCaptureWindow() {
 
         if (newState === "Visible") {
           isVisibleRef.current = true;
-          setIsFocused(true);
           // Focus the textarea when window becomes visible
           setTimeout(() => textareaRef.current?.focus(), 50);
         } else if (newState === "Hidden") {
           isVisibleRef.current = false;
-          setIsFocused(false);
         }
       });
 
@@ -66,46 +63,21 @@ export function QuickCaptureWindow() {
     }
   };
 
-  // Track window focus for UI only (blue border indicator)
-  // Visibility is tracked separately via backend events
+  // Check initial state from backend on mount
   useEffect(() => {
-    const handleWindowFocus = () => {
-      // Only update UI if we're actually visible
-      if (isVisibleRef.current) {
-        setIsFocused(true);
-        textareaRef.current?.focus();
-      }
-    };
-
-    const handleWindowBlur = () => {
-      setIsFocused(false);
-    };
-
-    window.addEventListener("focus", handleWindowFocus);
-    window.addEventListener("blur", handleWindowBlur);
-
-    // Check initial state from backend
     const checkInitialState = async () => {
       try {
         const response = await quickCaptureAPI.getState();
         const backendState = response.data;
         if (backendState === "Visible") {
           isVisibleRef.current = true;
-          setIsFocused(document.hasFocus());
-          if (document.hasFocus()) {
-            textareaRef.current?.focus();
-          }
+          textareaRef.current?.focus();
         }
       } catch {
         // Ignore - will sync on next state change event
       }
     };
     checkInitialState();
-
-    return () => {
-      window.removeEventListener("focus", handleWindowFocus);
-      window.removeEventListener("blur", handleWindowBlur);
-    };
   }, []);
 
   // Single unified keyboard handler with capture phase for reliability
@@ -184,9 +156,7 @@ export function QuickCaptureWindow() {
     padding: 8,
     backgroundColor: colors.background,
     borderRadius: 12,
-    border: isFocused ? "2px solid hsl(210 100% 50%)" : "2px solid transparent",
     boxSizing: "border-box",
-    transition: "border-color 0.15s ease",
   };
 
   const textareaStyle: React.CSSProperties = {
