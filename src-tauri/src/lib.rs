@@ -61,7 +61,6 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
         .global_shortcut()
         .on_shortcut("Alt+Space", move |_app, _shortcut, event| {
             if event.state == ShortcutState::Pressed {
-                tracing::info!("Alt+Space hotkey pressed - triggering quick capture");
                 if let Err(error) = adapters::inbound::ui::quick_capture_window::show(&shortcut_app) {
                     tracing::warn!("Failed to show quick capture window: {}", error);
                 }
@@ -145,7 +144,7 @@ pub fn run() {
 
     #[cfg(target_os = "macos")]
     {
-        builder = builder.plugin(tauri_nspanel::init());
+        builder = builder.plugin(infrastructure::nspanel::init());
     }
 
     builder

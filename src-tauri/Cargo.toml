@@ -76,8 +76,7 @@ fastembed = "5.8.1"
 cocoa = "0.26"
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", features = ["NSThread"] }
-objc2-app-kit = { version = "0.3", features = ["NSWindow", "NSPanel", "NSResponder", "NSApplication", "NSRunningApplication"] }
-tauri-nspanel = { path = "../../tauri-nspanel" }
+objc2-app-kit = { version = "0.3", features = ["NSWindow", "NSPanel", "NSResponder", "NSApplication", "NSRunningApplication", "NSView"] }
 
 [dev-dependencies]
 tempfile = "3.13"

@@ -8,6 +8,9 @@ pub mod config;
 pub mod database;
 pub mod container;
 
+#[cfg(target_os = "macos")]
+pub mod nspanel;
+
 // Re-exports
 pub use config::{AppConfig, DatabaseConfig, AppPaths, Environment};
 pub use database::{DatabaseManager, run_migrations, seed_initial_data};

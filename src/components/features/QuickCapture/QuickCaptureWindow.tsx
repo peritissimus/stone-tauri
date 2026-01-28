@@ -5,15 +5,9 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useQuickCaptureAPI } from "@/hooks/useQuickCaptureAPI";
 import { quickCaptureAPI } from "@/api/quickCaptureAPI";
-
-// Log to backend process
-const backendLog = (message: string, level?: "info" | "warn" | "error" | "debug") => {
-  invoke("log_from_frontend", { message, level }).catch(() => {});
-};
 
 const DRAFT_KEY = "quick-capture-draft";
 
@@ -34,7 +28,6 @@ export function QuickCaptureWindow() {
     const setupListener = async () => {
       const unlisten = await listen<string>("quick-capture:state-changed", (event) => {
         const newState = event.payload;
-        backendLog(`QuickCapture: Backend state changed to ${newState}`);
 
         if (newState === "Visible") {
           isVisibleRef.current = true;
@@ -60,23 +53,16 @@ export function QuickCaptureWindow() {
   const closeWindow = async () => {
     // Only close if we're visible (tracked from backend events)
     if (!isVisibleRef.current) {
-      backendLog("QuickCapture: Not visible, ignoring close");
       return;
     }
 
     // Mark as not visible immediately to prevent duplicate calls
     isVisibleRef.current = false;
-    backendLog("QuickCapture: Attempting to hide window");
 
     try {
-      const response = await quickCaptureAPI.hide();
-      if (response.success && response.data?.success) {
-        backendLog(`QuickCapture: Window hidden, state: ${response.data.state}`);
-      } else {
-        backendLog(`QuickCapture: Failed to hide: ${response.data?.error || response.error}`, "error");
-      }
-    } catch (err) {
-      backendLog(`QuickCapture: Hide error: ${err}`, "error");
+      await quickCaptureAPI.hide();
+    } catch {
+      // Ignore errors - window will be hidden regardless
     }
   };
 
@@ -84,7 +70,6 @@ export function QuickCaptureWindow() {
   // Visibility is tracked separately via backend events
   useEffect(() => {
     const handleWindowFocus = () => {
-      backendLog("QuickCapture: Window focus event");
       // Only update UI if we're actually visible
       if (isVisibleRef.current) {
         setIsFocused(true);
@@ -93,7 +78,6 @@ export function QuickCaptureWindow() {
     };
 
     const handleWindowBlur = () => {
-      backendLog("QuickCapture: Window blur event");
       setIsFocused(false);
     };
 
@@ -105,7 +89,6 @@ export function QuickCaptureWindow() {
       try {
         const response = await quickCaptureAPI.getState();
         const backendState = response.data;
-        backendLog(`QuickCapture: Initial backend state is ${backendState}`);
         if (backendState === "Visible") {
           isVisibleRef.current = true;
           setIsFocused(document.hasFocus());
@@ -114,7 +97,7 @@ export function QuickCaptureWindow() {
           }
         }
       } catch {
-        backendLog("QuickCapture: Could not get initial state", "warn");
+        // Ignore - will sync on next state change event
       }
     };
     checkInitialState();
@@ -130,7 +113,6 @@ export function QuickCaptureWindow() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape to close (no text submission)
       if (e.key === "Escape") {
-        backendLog(`QuickCapture: Escape key pressed (isVisible=${isVisibleRef.current})`);
         e.preventDefault();
         e.stopPropagation();
         void closeWindow();
@@ -139,7 +121,6 @@ export function QuickCaptureWindow() {
 
       // Cmd/Ctrl+Enter to save and close
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-        backendLog("QuickCapture: Cmd/Ctrl+Enter pressed, saving");
         e.preventDefault();
         e.stopPropagation();
 
@@ -152,8 +133,7 @@ export function QuickCaptureWindow() {
           // Close window immediately
           void closeWindow();
           // Save in background
-          appendToJournal(trimmedText).catch((err) => {
-            backendLog(`QuickCapture: Save failed: ${err}`, "error");
+          appendToJournal(trimmedText).catch(() => {
             // If save fails, restore draft so user doesn't lose content
             localStorage.setItem(DRAFT_KEY, trimmedText);
           });
@@ -166,10 +146,6 @@ export function QuickCaptureWindow() {
     return () =>
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [text, appendToJournal]);
-
-  // NOTE: Blur event handler removed intentionally
-  // It caused accidental window closes during app switching (Cmd+Tab)
-  // The window should only close via explicit user actions (Escape, Cmd+Enter)
 
   // Save draft on text change (debounced naturally by React state)
   useEffect(() => {
@@ -186,8 +162,6 @@ export function QuickCaptureWindow() {
     window.matchMedia("(prefers-color-scheme: dark)").matches;
 
   // Colors from index.css - using popover colors for floating panel visibility
-  // Dark: --popover: 0 0% 10% / 0.85, --popover-foreground: 0 0% 92%
-  // Light: --popover: 0 0% 100%, --popover-foreground: 0 0% 12%
   const colors = isDark
     ? {
         background: "hsl(0 0% 10% / 0.5)",
@@ -246,11 +220,7 @@ export function QuickCaptureWindow() {
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => {
-          const newText = e.target.value;
-          backendLog(`QuickCapture: Typing - text length: ${newText.length}`);
-          setText(newText);
-        }}
+        onChange={(e) => setText(e.target.value)}
         placeholder="What's on your mind? (Cmd+Enter to save)"
         rows={3}
         style={textareaStyle}
