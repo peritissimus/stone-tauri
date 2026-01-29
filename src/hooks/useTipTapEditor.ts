@@ -20,6 +20,7 @@ import { CodeBlockWithMermaid } from '@/extensions/CodeBlockWithMermaid';
 // Import slash command extension
 import { SlashCommand } from '@/extensions/SlashCommand';
 import { NoteLink } from '@/extensions/NoteLink';
+import { Timestamp } from '@/extensions/Timestamp';
 import { Note } from '@/types';
 import { IndentableBlock } from '@/extensions/IndentableBlock';
 import { SearchAndReplace } from '@/extensions/SearchAndReplace';
@@ -228,6 +229,11 @@ export function useTipTapEditor() {
         fetchNotes: fetchNotesForAutocomplete,
         HTMLAttributes: {
           class: 'note-link',
+        },
+      }),
+      Timestamp.configure({
+        HTMLAttributes: {
+          class: 'timestamp',
         },
       }),
       IndentableBlock.configure({
