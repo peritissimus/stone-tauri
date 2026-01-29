@@ -945,7 +945,7 @@ span[data-type="task-marker"] {
   color: hsl(var(--muted-foreground));
   cursor: pointer;
   user-select: none;
-  vertical-align: baseline;
+  vertical-align: middle;
   white-space: nowrap;
   transition: all 0.2s ease;
 }
