@@ -484,6 +484,7 @@ mod tests {
             is_archived: false,
             is_deleted: false,
             deleted_at: None,
+            embedding: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }

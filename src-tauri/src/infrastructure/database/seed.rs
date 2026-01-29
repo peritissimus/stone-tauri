@@ -456,7 +456,7 @@ pub async fn seed_initial_data(pool: Arc<DbPool>) -> DomainResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::database::create_pool;
+    use crate::shared::database::{create_pool, DatabaseConfig};
     use crate::infrastructure::database::run_migrations;
     use tempfile::TempDir;
 
@@ -464,7 +464,8 @@ mod tests {
     async fn test_seed_initial_data() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let pool = Arc::new(create_pool(db_path.to_str().unwrap()).unwrap());
+        let config = DatabaseConfig::new(format!("sqlite://{}", db_path.display()));
+        let pool = Arc::new(create_pool(config).unwrap());
 
         // Run migrations first
         run_migrations(&pool).unwrap();
@@ -489,7 +490,8 @@ mod tests {
     async fn test_seed_idempotent() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let pool = Arc::new(create_pool(db_path.to_str().unwrap()).unwrap());
+        let config = DatabaseConfig::new(format!("sqlite://{}", db_path.display()));
+        let pool = Arc::new(create_pool(config).unwrap());
 
         run_migrations(&pool).unwrap();
 

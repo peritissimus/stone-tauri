@@ -73,14 +73,15 @@ pub fn revert_last_migration(pool: &DbPool) -> DomainResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::database::create_pool;
+    use crate::shared::database::{create_pool, DatabaseConfig};
     use tempfile::TempDir;
 
     #[test]
     fn test_run_migrations() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let pool = create_pool(db_path.to_str().unwrap()).unwrap();
+        let config = DatabaseConfig::new(format!("sqlite://{}", db_path.display()));
+        let pool = create_pool(config).unwrap();
 
         let result = run_migrations(&pool);
         assert!(result.is_ok());
@@ -94,7 +95,8 @@ mod tests {
     fn test_applied_migrations() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let pool = create_pool(db_path.to_str().unwrap()).unwrap();
+        let config = DatabaseConfig::new(format!("sqlite://{}", db_path.display()));
+        let pool = create_pool(config).unwrap();
 
         run_migrations(&pool).unwrap();
 

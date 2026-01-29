@@ -207,10 +207,7 @@ mod tests {
     use super::*;
     use crate::adapters::outbound::services::event_publisher_impl::TokioEventPublisher;
     use chrono::Utc;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use tempfile::TempDir;
-    use tokio::fs;
-    use tokio::time::sleep;
 
     #[tokio::test]
     async fn test_watch_workspace() {
@@ -224,11 +221,7 @@ mod tests {
             folder_path: temp_dir.path().to_string_lossy().to_string(),
             is_active: true,
             created_at: Utc::now(),
-            updated_at: Utc::now(),
-            last_opened_at: Some(Utc::now()),
-            icon: None,
-            git_enabled: false,
-            file_watcher_enabled: true,
+            last_accessed_at: Utc::now(),
         };
 
         let result = watcher.watch_workspace(&workspace).await;
@@ -251,11 +244,7 @@ mod tests {
             folder_path: temp_dir.path().to_string_lossy().to_string(),
             is_active: true,
             created_at: Utc::now(),
-            updated_at: Utc::now(),
-            last_opened_at: Some(Utc::now()),
-            icon: None,
-            git_enabled: false,
-            file_watcher_enabled: true,
+            last_accessed_at: Utc::now(),
         };
 
         watcher.watch_workspace(&workspace).await.unwrap();
@@ -281,11 +270,7 @@ mod tests {
             folder_path: temp_dir.path().to_string_lossy().to_string(),
             is_active: true,
             created_at: Utc::now(),
-            updated_at: Utc::now(),
-            last_opened_at: Some(Utc::now()),
-            icon: None,
-            git_enabled: false,
-            file_watcher_enabled: true,
+            last_accessed_at: Utc::now(),
         };
 
         watcher.watch_workspace(&workspace).await.unwrap();
