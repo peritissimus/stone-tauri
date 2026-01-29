@@ -7,6 +7,8 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
+#[cfg(target_os = "macos")]
+use tauri::window::{Effect, EffectsBuilder};
 
 #[cfg(target_os = "macos")]
 use crate::infrastructure::nspanel::{
@@ -287,6 +289,13 @@ fn show_macos(
     }
 
     let window = builder.build()?;
+
+    // Apply window effects for proper transparency - use HudWindow for floating panels
+    let _ = window.set_effects(
+        EffectsBuilder::new()
+            .effects([Effect::HudWindow])
+            .build(),
+    );
 
     // Convert to panel with our custom panel type that has canBecomeKeyWindow: true
     let panel = window.to_panel().map_err(|e| {
