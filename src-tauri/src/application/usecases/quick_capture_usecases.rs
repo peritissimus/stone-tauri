@@ -51,15 +51,11 @@ impl QuickCaptureUseCases for QuickCaptureUseCasesImpl {
 
         // Get workspace - ✅ ASYNC
         let workspace = if let Some(workspace_id) = workspace_id {
-            self.workspace_repository
-                .find_by_id(workspace_id)
-                .await?
+            self.workspace_repository.find_by_id(workspace_id).await?
         } else {
             self.workspace_repository.find_active().await?
         }
-        .ok_or_else(|| {
-            DomainError::ValidationError("No active workspace".to_string())
-        })?;
+        .ok_or_else(|| DomainError::ValidationError("No active workspace".to_string()))?;
 
         // Get today's date for journal
         let now = Local::now();
@@ -75,7 +71,7 @@ impl QuickCaptureUseCases for QuickCaptureUseCasesImpl {
 
         // Format timestamp and entry
         let timestamp = now.format("%H:%M").to_string(); // e.g., "14:30"
-        let entry_content = format!("\n\n{} - {}", timestamp, content);
+        let entry_content = format!("\n\n[{}] {}", timestamp, content);
 
         // Build absolute path
         let absolute_path = Path::new(&workspace.folder_path)
