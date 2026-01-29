@@ -907,6 +907,22 @@ textarea:focus {
   border-top-width: 1px;
 }
 
+/* Timestamp Badge Styles */
+span[data-type="timestamp"] {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8em;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  user-select: none;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
 /* Task List Styles */
 .prose ul[data-type='taskList'] {
   @apply list-none pl-0;

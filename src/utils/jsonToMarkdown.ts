@@ -100,6 +100,12 @@ function processNode(node: ProseMirrorNode): string {
       return `[[${noteTitle}]]`;
     }
 
+    case 'timestamp': {
+      // Convert timestamp node back to [HH:MM] syntax
+      const time = attrs?.time || '00:00';
+      return `[${time}]`;
+    }
+
     case 'image': {
       // Convert image node to markdown image syntax
       const src = attrs?.src || '';
@@ -355,6 +361,12 @@ function processNodeForTable(node: ProseMirrorNode): string {
       // Note links in table cells
       const tableCellNoteTitle = node.attrs?.title || 'Unknown';
       return `[[${tableCellNoteTitle}]]`;
+    }
+
+    case 'timestamp': {
+      // Timestamps in table cells
+      const tableCellTime = node.attrs?.time || '00:00';
+      return `[${tableCellTime}]`;
     }
 
     default:

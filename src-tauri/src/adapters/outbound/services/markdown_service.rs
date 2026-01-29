@@ -17,6 +17,7 @@ use crate::domain::{
 pub struct PulldownMarkdownService {
     wiki_link_regex: Regex,
     frontmatter_regex: Regex,
+    timestamp_regex: Regex,
 }
 
 impl PulldownMarkdownService {
@@ -26,6 +27,8 @@ impl PulldownMarkdownService {
             wiki_link_regex: Regex::new(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]").unwrap(),
             // Matches YAML frontmatter (--- ... ---)
             frontmatter_regex: Regex::new(r"^---\s*\n(.*?)\n---\s*\n").unwrap(),
+            // Matches [HH:MM] timestamp pattern (00:00 to 23:59)
+            timestamp_regex: Regex::new(r"\[([01]?[0-9]|2[0-3]):([0-5][0-9])\]").unwrap(),
         }
     }
 
@@ -200,6 +203,24 @@ impl MarkdownProcessor for PulldownMarkdownService {
         let parser = Parser::new_ext(markdown, options);
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
+
+        // Post-process: Convert [HH:MM] patterns to timestamp spans
+        // This allows timestamps to round-trip through save/load
+        let html_output = self.timestamp_regex.replace_all(&html_output, |caps: &regex::Captures| {
+            let hours = caps.get(1).map(|m| m.as_str()).unwrap_or("00");
+            let minutes = caps.get(2).map(|m| m.as_str()).unwrap_or("00");
+            // Pad hours to 2 digits
+            let hours_padded = if hours.len() == 1 {
+                format!("0{}", hours)
+            } else {
+                hours.to_string()
+            };
+            let time = format!("{}:{}", hours_padded, minutes);
+            format!(
+                r#"<span data-type="timestamp" data-time="{}" class="timestamp-badge">{}</span>"#,
+                time, time
+            )
+        }).to_string();
 
         Ok(html_output)
     }

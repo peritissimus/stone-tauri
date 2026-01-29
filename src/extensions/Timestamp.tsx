@@ -4,36 +4,10 @@
  * This extension provides:
  * 1. A custom node type for [HH:MM] timestamps
  * 2. Automatic detection when typing timestamps
- * 3. Styled badge display
+ * 3. Styled badge display via CSS
  */
 
 import { Node, mergeAttributes, InputRule } from '@tiptap/core';
-import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
-import { Clock } from 'phosphor-react';
-
-// NodeView component for rendering timestamps
-function TimestampNodeView({ node }: NodeViewProps) {
-  const time = (node.attrs.time as string) || '00:00';
-
-  return (
-    <NodeViewWrapper as="span" className="inline">
-      <span
-        className="
-          inline-flex items-center gap-1
-          px-1.5 py-0.5
-          rounded
-          bg-muted text-muted-foreground
-          text-xs font-mono font-medium
-          select-none
-        "
-        contentEditable={false}
-      >
-        <Clock size={11} weight="bold" />
-        <span>{time}</span>
-      </span>
-    </NodeViewWrapper>
-  );
-}
 
 export interface TimestampOptions {
   HTMLAttributes: Record<string, unknown>;
@@ -91,32 +65,18 @@ export const Timestamp = Node.create<TimestampOptions>({
       {
         tag: 'span[data-type="timestamp"]',
       },
-      // Also parse plain [HH:MM] text
-      {
-        tag: 'span',
-        getAttrs: (element) => {
-          if (typeof element === 'string') return false;
-          const text = element.textContent || '';
-          const match = text.match(/^\[(\d{1,2}:\d{2})\]$/);
-          if (match) {
-            return { time: match[1] };
-          }
-          return false;
-        },
-      },
     ];
   },
 
   renderHTML({ node, HTMLAttributes }) {
     return [
       'span',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { 'data-type': 'timestamp' }),
-      `[${node.attrs.time}]`,
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        'data-type': 'timestamp',
+        'class': 'timestamp-badge',
+      }),
+      node.attrs.time,
     ];
-  },
-
-  addNodeView() {
-    return ReactNodeViewRenderer(TimestampNodeView);
   },
 
   addCommands() {
