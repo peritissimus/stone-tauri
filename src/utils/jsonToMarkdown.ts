@@ -106,6 +106,12 @@ function processNode(node: ProseMirrorNode): string {
       return `[${time}]`;
     }
 
+    case 'taskMarker': {
+      // Convert task marker node back to plain text (e.g., "TODO ")
+      const state = attrs?.state || 'todo';
+      return state.toUpperCase() + ' ';
+    }
+
     case 'image': {
       // Convert image node to markdown image syntax
       const src = attrs?.src || '';
@@ -367,6 +373,12 @@ function processNodeForTable(node: ProseMirrorNode): string {
       // Timestamps in table cells
       const tableCellTime = node.attrs?.time || '00:00';
       return `[${tableCellTime}]`;
+    }
+
+    case 'taskMarker': {
+      // Task markers in table cells
+      const tableCellState = node.attrs?.state || 'todo';
+      return tableCellState.toUpperCase() + ' ';
     }
 
     default:

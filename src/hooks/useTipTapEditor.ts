@@ -21,6 +21,7 @@ import { CodeBlockWithMermaid } from '@/extensions/CodeBlockWithMermaid';
 import { SlashCommand } from '@/extensions/SlashCommand';
 import { NoteLink } from '@/extensions/NoteLink';
 import { Timestamp } from '@/extensions/Timestamp';
+import { TaskMarker } from '@/extensions/TaskMarker';
 import { Note } from '@/types';
 import { IndentableBlock } from '@/extensions/IndentableBlock';
 import { SearchAndReplace } from '@/extensions/SearchAndReplace';
@@ -234,6 +235,11 @@ export function useTipTapEditor() {
       Timestamp.configure({
         HTMLAttributes: {
           class: 'timestamp',
+        },
+      }),
+      TaskMarker.configure({
+        HTMLAttributes: {
+          class: 'task-marker',
         },
       }),
       IndentableBlock.configure({

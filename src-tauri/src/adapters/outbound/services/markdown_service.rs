@@ -18,6 +18,7 @@ pub struct PulldownMarkdownService {
     wiki_link_regex: Regex,
     frontmatter_regex: Regex,
     timestamp_regex: Regex,
+    task_marker_regex: Regex,
 }
 
 impl PulldownMarkdownService {
@@ -29,6 +30,8 @@ impl PulldownMarkdownService {
             frontmatter_regex: Regex::new(r"^---\s*\n(.*?)\n---\s*\n").unwrap(),
             // Matches [HH:MM] timestamp pattern (00:00 to 23:59)
             timestamp_regex: Regex::new(r"\[([01]?[0-9]|2[0-3]):([0-5][0-9])\]").unwrap(),
+            // Matches task markers at word boundary: TODO, DOING, DONE, WAITING, HOLD, CANCELED, CANCELLED, IDEA
+            task_marker_regex: Regex::new(r"\b(TODO|DOING|DONE|WAITING|HOLD|CANCELED|CANCELLED|IDEA)\b").unwrap(),
         }
     }
 
@@ -219,6 +222,25 @@ impl MarkdownProcessor for PulldownMarkdownService {
             format!(
                 r#"<span data-type="timestamp" data-time="{}" class="timestamp-badge">{}</span>"#,
                 time, time
+            )
+        }).to_string();
+
+        // Post-process: Convert task markers (TODO, DOING, DONE, etc.) to task-marker spans
+        // This allows task markers to round-trip through save/load
+        let html_output = self.task_marker_regex.replace_all(&html_output, |caps: &regex::Captures| {
+            let marker = caps.get(1).map(|m| m.as_str()).unwrap_or("TODO");
+            // Normalize state: lowercase and convert CANCELLED to CANCELED
+            let state = marker.to_lowercase();
+            let state = if state == "cancelled" { "canceled".to_string() } else { state };
+            // Get display label (use short labels for some states)
+            let label = match state.as_str() {
+                "waiting" => "WAIT",
+                "canceled" => "CAN",
+                _ => marker,
+            };
+            format!(
+                r#"<span data-type="task-marker" data-state="{}" class="task-marker-badge">{}</span>"#,
+                state, label
             )
         }).to_string();
 
