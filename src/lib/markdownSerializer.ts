@@ -480,6 +480,3 @@ function applyMarks(text: string, marks: ProseMirrorMark[]): string {
 
   return result;
 }
-
-// Export alias for compatibility with existing code
-export { serializeMarkdown as jsonToMarkdown };

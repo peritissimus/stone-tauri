@@ -239,7 +239,7 @@ impl NoteUseCases for NoteUseCasesImpl {
 
                 let absolute_path = Path::new(&workspace.folder_path).join(file_path);
                 
-                // Content is already Markdown from the frontend (via jsonToMarkdown), no conversion needed
+                // Content is already Markdown from the frontend (via serializeMarkdown), no conversion needed
                 // Calling html_to_markdown would incorrectly convert literal <br/> tags in code blocks
                 let body_markdown = content;
 

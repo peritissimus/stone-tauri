@@ -435,12 +435,4 @@ export function parseMarkdown(markdown: string, _schema?: unknown): JSONContent 
   return doc;
 }
 
-/**
- * Create a markdown parser function bound to a specific schema
- * @param schema - The ProseMirror schema (reserved for future validation use)
- */
-export function createMarkdownParser(schema?: unknown) {
-  return (markdown: string) => parseMarkdown(markdown, schema);
-}
-
 export { md as markdownIt };
