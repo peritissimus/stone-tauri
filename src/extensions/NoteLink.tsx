@@ -4,68 +4,28 @@
  * This extension provides:
  * 1. A custom node type for [[note name]] syntax
  * 2. Autocomplete when typing [[
- * 3. Clickable links that navigate to the linked note
+ * 3. Clickable links that navigate to the linked note (via ProseMirror plugin)
+ *
+ * Note: Uses native DOM rendering (renderHTML) instead of React NodeView
+ * for better clipboard serialization and copy/paste support.
  */
 
-import React from 'react';
 import { Node, mergeAttributes } from '@tiptap/core';
-import { ReactNodeViewRenderer } from '@tiptap/react';
 import { ReactRenderer } from '@tiptap/react';
 import Suggestion, { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
-import { PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 
 // Unique plugin key for note link suggestion
-const noteLinkPluginKey = new PluginKey('noteLink');
+const noteLinkSuggestionPluginKey = new PluginKey('noteLinkSuggestion');
+// Plugin key for note link click handling
+const noteLinkClickPluginKey = new PluginKey('noteLinkClick');
+
 import {
   NoteLinkMenu,
   NoteLinkMenuRef,
   NoteLinkItem,
 } from '../components/features/Editor/NoteLinkMenu';
-import { NodeViewWrapper } from '@tiptap/react';
-import { Link } from 'phosphor-react';
-
-// NodeView component for rendering note links
-function NoteLinkNodeView({ node, selected }: { node: any; selected: boolean }) {
-  const title = node.attrs.title || 'Unknown';
-  const noteId = node.attrs.noteId;
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Dispatch a custom event that can be caught by the editor container
-    const event = new CustomEvent('note-link-click', {
-      bubbles: true,
-      detail: { noteId, title },
-    });
-    (e.target as HTMLElement).dispatchEvent(event);
-  };
-
-  return (
-    <NodeViewWrapper as="span" className="inline">
-      <span
-        onClick={handleClick}
-        className={`
-          inline-flex items-center gap-1
-          px-1.5 py-0.5
-          rounded
-          bg-primary/10 text-primary
-          cursor-pointer
-          hover:bg-primary/20
-          transition-colors
-          text-sm font-medium
-          ${selected ? 'ring-2 ring-primary/50' : ''}
-        `}
-        data-note-id={noteId}
-        contentEditable={false}
-      >
-        <Link size={12} weight="bold" />
-        <span>{title}</span>
-      </span>
-    </NodeViewWrapper>
-  );
-}
 
 export interface NoteLinkOptions {
   /**
@@ -142,16 +102,23 @@ export const NoteLink = Node.create<NoteLinkOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
+    const title = node.attrs.title || 'Unknown';
+    const noteId = node.attrs.noteId;
+
+    // Render as a styled span with link icon (using CSS for the icon)
     return [
       'span',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { 'data-type': 'note-link' }),
-      `[[${node.attrs.title || 'Unknown'}]]`,
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        'data-type': 'note-link',
+        'data-note-id': noteId,
+        'data-title': title,
+        class: 'note-link-badge',
+      }),
+      title,
     ];
   },
 
-  addNodeView() {
-    return ReactNodeViewRenderer(NoteLinkNodeView);
-  },
+  // Note: No addNodeView() - using native DOM rendering for better clipboard support
 
   addCommands() {
     return {
@@ -170,8 +137,42 @@ export const NoteLink = Node.create<NoteLinkOptions>({
     const { fetchNotes } = this.options;
 
     return [
+      // Click handling plugin for note link navigation
+      new Plugin({
+        key: noteLinkClickPluginKey,
+        props: {
+          handleClick(_view, _pos, event) {
+            const target = event.target as HTMLElement;
+
+            // Check if clicked on a note link
+            if (target.dataset.type === 'note-link' || target.closest('[data-type="note-link"]')) {
+              const linkElement = target.dataset.type === 'note-link'
+                ? target
+                : target.closest('[data-type="note-link"]') as HTMLElement;
+
+              if (!linkElement) return false;
+
+              const noteId = linkElement.dataset.noteId;
+              const title = linkElement.dataset.title;
+
+              // Dispatch a custom event that can be caught by the editor container
+              const customEvent = new CustomEvent('note-link-click', {
+                bubbles: true,
+                detail: { noteId, title },
+              });
+              linkElement.dispatchEvent(customEvent);
+
+              return true;
+            }
+
+            return false;
+          },
+        },
+      }),
+
+      // Autocomplete suggestion plugin
       Suggestion({
-        pluginKey: noteLinkPluginKey,
+        pluginKey: noteLinkSuggestionPluginKey,
         editor: this.editor,
         char: '[[',
         allowSpaces: true,

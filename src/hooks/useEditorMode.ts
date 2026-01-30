@@ -9,10 +9,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { marked } from 'marked';
 import { Editor } from '@tiptap/react';
 import { useEditorUI } from '@/hooks/useUI';
-import { jsonToMarkdown } from '@/utils/jsonToMarkdown';
+import { parseMarkdown } from '@/lib/markdownParser';
+import { serializeMarkdown } from '@/lib/markdownSerializer';
 import { logger } from '@/utils/logger';
 
 interface UseEditorModeOptions {
@@ -51,21 +51,16 @@ export function useEditorMode({
     if (editorMode === 'raw') {
       // Rich → Raw: Convert TipTap JSON to markdown
       const json = editor.getJSON();
-      const markdown = jsonToMarkdown(json);
+      const markdown = serializeMarkdown(json);
       setRawMarkdown(markdown);
       lastSyncedMarkdownRef.current = markdown;
       setRawDirty(false);
       logger.info('[useEditorMode] Switched to raw mode');
     } else {
-      // Raw → Rich: Convert markdown to HTML and update editor
+      // Raw → Rich: Convert markdown to ProseMirror JSON and update editor
       if (rawMarkdown !== lastSyncedMarkdownRef.current) {
-        marked.setOptions({
-          gfm: true,
-          breaks: true,
-        });
-
-        const html = marked.parse(rawMarkdown) as string;
-        editor.commands.setContent(html);
+        const docJson = parseMarkdown(rawMarkdown, editor.schema);
+        editor.commands.setContent(docJson);
         lastSyncedMarkdownRef.current = rawMarkdown;
         setRawDirty(false);
         logger.info('[useEditorMode] Switched to rich mode, content updated');

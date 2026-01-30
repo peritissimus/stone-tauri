@@ -12,7 +12,8 @@ import { useNoteAPI } from '@/hooks/useNoteAPI';
 import { useNoteEvents } from '@/hooks/useNoteEvents';
 import { useFileEvents } from '@/hooks/useFileEvents';
 import { subscribe } from '@/lib/events';
-import { jsonToMarkdown } from '@/utils/jsonToMarkdown';
+import { parseMarkdown } from '@/lib/markdownParser';
+import { serializeMarkdown } from '@/lib/markdownSerializer';
 import { logger } from '@/utils/logger';
 import { deleteDraft } from '@/utils/draftStorage';
 import { noteAPI } from '@/api';
@@ -66,12 +67,13 @@ export function useDocumentBuffer({
         const response = await noteAPI.getContent(noteId);
 
         if (response.success && response.data) {
-          const htmlContent = response.data.content;
-          // Set content in editor
-          editor.commands.setContent(htmlContent);
+          // Backend returns raw markdown - parse it directly to ProseMirror JSON
+          const markdownContent = response.data.content;
+          const docJson = parseMarkdown(markdownContent, editor.schema);
+          // Set content in editor using parsed JSON
+          editor.commands.setContent(docJson);
           // Cache the parsed JSON in buffer
-          const jsonContent = editor.getJSON();
-          setBuffer(noteId, jsonContent);
+          setBuffer(noteId, docJson);
         } else {
           editor.commands.setContent('');
           setBuffer(noteId, { type: 'doc', content: [] });
@@ -130,9 +132,11 @@ export function useDocumentBuffer({
       try {
         const response = await noteAPI.getContent(noteId);
         if (response.success && response.data) {
-          editor.commands.setContent(response.data.content);
-          const jsonContent = editor.getJSON();
-          setBuffer(noteId, jsonContent);
+          // Backend returns raw markdown - parse it directly to ProseMirror JSON
+          const markdownContent = response.data.content;
+          const docJson = parseMarkdown(markdownContent, editor.schema);
+          editor.commands.setContent(docJson);
+          setBuffer(noteId, docJson);
         }
       } catch (error) {
         logger.error('[useDocumentBuffer] Failed to reload after external update:', error);
@@ -217,7 +221,7 @@ export function useDocumentBuffer({
     }
 
     try {
-      const markdown = jsonToMarkdown(buffer.content as any);
+      const markdown = serializeMarkdown(buffer.content as any);
       const result = await updateNote(noteId, { content: markdown }, false);
 
       if (result) {
@@ -240,7 +244,7 @@ export function useDocumentBuffer({
 
     for (const buffer of dirtyBuffers) {
       try {
-        const markdown = jsonToMarkdown(buffer.content as any);
+        const markdown = serializeMarkdown(buffer.content as any);
         const result = await updateNote(buffer.noteId, { content: markdown }, false);
         if (result) {
           markClean(buffer.noteId);
@@ -277,7 +281,7 @@ export function useDocumentAutosave(intervalMs: number = 30000) {
 
     for (const buffer of dirtyBuffers) {
       try {
-        const markdown = jsonToMarkdown(buffer.content as any);
+        const markdown = serializeMarkdown(buffer.content as any);
         const result = await updateNote(buffer.noteId, { content: markdown }, false);
         if (result) {
           markClean(buffer.noteId);
@@ -297,7 +301,7 @@ export function useDocumentAutosave(intervalMs: number = 30000) {
 
     logger.debug('[useDocumentAutosave] Saving note on switch:', noteId);
     try {
-      const markdown = jsonToMarkdown(buffer.content as any);
+      const markdown = serializeMarkdown(buffer.content as any);
       const result = await updateNote(noteId, { content: markdown }, false);
       if (result) {
         markClean(noteId);
@@ -321,7 +325,7 @@ export function useDocumentAutosave(intervalMs: number = 30000) {
       const dirtyBuffers = getDirtyBuffers();
       for (const buffer of dirtyBuffers) {
         try {
-          const markdown = jsonToMarkdown(buffer.content as any);
+          const markdown = serializeMarkdown(buffer.content as any);
           // Fire and forget - can't await in beforeunload
           updateNote(buffer.noteId, { content: markdown }, false);
         } catch {

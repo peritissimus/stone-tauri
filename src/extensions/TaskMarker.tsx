@@ -4,12 +4,15 @@
  * This extension provides:
  * 1. A custom inline node type for task markers
  * 2. Automatic detection when typing task keywords at line start
- * 3. Clickable badges that cycle through states
+ * 3. Clickable badges that cycle through states (via ProseMirror plugin)
  * 4. Styled badge display via CSS
+ *
+ * Note: Uses native DOM rendering (renderHTML) instead of React NodeView
+ * for better clipboard serialization and copy/paste support.
  */
 
 import { Node, mergeAttributes, InputRule } from '@tiptap/core';
-import { NodeViewWrapper, NodeViewProps, ReactNodeViewRenderer } from '@tiptap/react';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 export interface TaskMarkerOptions {
   HTMLAttributes: Record<string, unknown>;
@@ -53,44 +56,8 @@ const DEFAULT_STATES: TaskState[] = [
 // Matches: TODO, DOING, DONE, WAITING, HOLD, CANCELED, CANCELLED, IDEA
 const TASK_MARKER_INPUT_REGEX = /^(TODO|DOING|DONE|WAITING|HOLD|CANCELED|CANCELLED|IDEA)\s$/i;
 
-// React component for the task marker badge
-function TaskMarkerView({ node, updateAttributes }: NodeViewProps) {
-  const state = (node.attrs.state as string) || 'todo';
-
-  const cycleState = () => {
-    const states = DEFAULT_STATES;
-    const currentIndex = states.findIndex((s) => s.value === state);
-    const nextIndex = (currentIndex + 1) % states.length;
-    updateAttributes({ state: states[nextIndex].value });
-  };
-
-  const getLabel = () => {
-    const stateConfig = DEFAULT_STATES.find((s) => s.value === state);
-    return stateConfig?.shortLabel || stateConfig?.label || state.toUpperCase();
-  };
-
-  return (
-    <NodeViewWrapper as="span" className="task-marker-wrapper">
-      <span
-        data-type="task-marker"
-        data-state={state}
-        className="task-marker-badge"
-        onClick={cycleState}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            cycleState();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        contentEditable={false}
-      >
-        {getLabel()}
-      </span>
-    </NodeViewWrapper>
-  );
-}
+// Plugin key for task marker click handling
+const taskMarkerPluginKey = new PluginKey('taskMarkerClick');
 
 export const TaskMarker = Node.create<TaskMarkerOptions>({
   name: 'taskMarker',
@@ -147,9 +114,7 @@ export const TaskMarker = Node.create<TaskMarkerOptions>({
     ];
   },
 
-  addNodeView() {
-    return ReactNodeViewRenderer(TaskMarkerView);
-  },
+  // Note: No addNodeView() - using native DOM rendering for better clipboard support
 
   addCommands() {
     return {
@@ -200,6 +165,70 @@ export const TaskMarker = Node.create<TaskMarkerOptions>({
           tr.replaceWith(start, end, this.type.create({ state: taskState }));
           // Add a space after the marker for continued typing
           tr.insertText(' ');
+        },
+      }),
+    ];
+  },
+
+  addProseMirrorPlugins() {
+    const extensionThis = this;
+
+    return [
+      new Plugin({
+        key: taskMarkerPluginKey,
+        props: {
+          handleClick(view, pos, event) {
+            const target = event.target as HTMLElement;
+
+            // Check if clicked on a task marker badge
+            if (target.dataset.type === 'task-marker' || target.closest('[data-type="task-marker"]')) {
+              const markerElement = target.dataset.type === 'task-marker'
+                ? target
+                : target.closest('[data-type="task-marker"]') as HTMLElement;
+
+              if (!markerElement) return false;
+
+              // Find the node at the clicked position
+              const { state, dispatch } = view;
+
+              // Look for taskMarker node around the clicked position
+              let foundPos: number | null = null;
+              let foundNode: any = null;
+
+              // Check the node at pos and nearby positions
+              for (let i = -1; i <= 1; i++) {
+                const checkPos = pos + i;
+                if (checkPos < 0 || checkPos >= state.doc.content.size) continue;
+
+                const node = state.doc.nodeAt(checkPos);
+                if (node?.type.name === 'taskMarker') {
+                  foundPos = checkPos;
+                  foundNode = node;
+                  break;
+                }
+              }
+
+              if (foundPos !== null && foundNode) {
+                const currentState = foundNode.attrs.state as string;
+                const states = extensionThis.options.states;
+                const currentIndex = states.findIndex((s) => s.value === currentState);
+                // Shift+click goes backward, normal click goes forward
+                const direction = event.shiftKey ? -1 : 1;
+                const nextIndex = (currentIndex + direction + states.length) % states.length;
+                const nextState = states[nextIndex].value;
+
+                // Update the node
+                const tr = state.tr.setNodeMarkup(foundPos, undefined, {
+                  ...foundNode.attrs,
+                  state: nextState,
+                });
+                dispatch(tr);
+                return true;
+              }
+            }
+
+            return false;
+          },
         },
       }),
     ];

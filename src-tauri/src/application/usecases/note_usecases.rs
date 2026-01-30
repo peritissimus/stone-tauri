@@ -509,6 +509,7 @@ impl NoteUseCases for NoteUseCasesImpl {
     }
 
     /// Get note content from file
+    /// Returns raw markdown (not HTML) - frontend handles conversion via prosemirror-markdown
     async fn get_note_content(&self, id: &str) -> DomainResult<String> {
         let note = self
             .note_repository
@@ -542,10 +543,11 @@ impl NoteUseCases for NoteUseCasesImpl {
 
         let markdown = self.file_storage.read(path_str).await?
             .ok_or_else(|| DomainError::ValidationError("Failed to read note content".to_string()))?;
-        let body_markdown = self.strip_first_heading(&markdown);
-        let html = self.markdown_processor.markdown_to_html(&body_markdown).await?;
 
-        Ok(html)
+        // Return raw markdown - frontend will parse it directly with prosemirror-markdown
+        let body_markdown = self.strip_first_heading(&markdown);
+
+        Ok(body_markdown)
     }
 
     /// Save note content to file
