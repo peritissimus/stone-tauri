@@ -14,6 +14,7 @@ import { useWorkspaceAPI } from "@/hooks/useWorkspaceAPI";
 import { useFileTreeAPI } from "@/hooks/useFileTreeAPI";
 import { useFileTreeStore } from "@/stores/fileTreeStore";
 import { formatShortcut } from "@/hooks/useKeyboardShortcuts";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export interface LayoutContainerProps {
   sidebar?: React.ReactNode;
@@ -38,15 +39,12 @@ export function LayoutContainer({
   sidebarWidth,
   onSidebarWidthChange,
   showSidebar,
-
   noteList,
   noteListWidth,
   onNoteListWidthChange,
   showNoteList,
-
   mainContent,
   overlayContent,
-
   className = "",
 }: LayoutContainerProps) {
   const { openSettings } = useModals();
@@ -55,12 +53,31 @@ export function LayoutContainer({
   const { loadNotes } = useNoteAPI();
   const { activeFolder } = useFileTreeStore();
 
+  // Manual window dragging handler
+  const handleStartDrag = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await getCurrentWindow().startDragging();
+    } catch (error) {
+      console.error("Failed to start dragging:", error);
+    }
+  };
+
   return (
     <>
       <Header
+        data-tauri-drag-region
         size="normal"
         className="fixed top-0 left-0 right-0 z-10"
-        left={<div className="ml-[64px] text-xs"></div>}
+        left={
+          <div
+            data-tauri-drag-region
+            onMouseDown={handleStartDrag}
+            className="ml-[64px] text-sm font-medium cursor-move select-none"
+          >
+            Stone
+          </div>
+        }
         right={
           <ControlGroup gap="sm" background="bg-transparent">
             <IconButton
