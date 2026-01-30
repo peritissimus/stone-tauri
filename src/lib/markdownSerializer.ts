@@ -133,7 +133,10 @@ function processNode(node: ProseMirrorNode, state: SerializerState): void {
       break;
 
     case 'bulletList':
-      closeBlock(state);
+      // Only close block for top-level lists, not nested ones
+      if (state.listIndent === 0) {
+        closeBlock(state);
+      }
       if (content) {
         for (const item of content) {
           processListItem(item, state, '- ');
@@ -145,7 +148,10 @@ function processNode(node: ProseMirrorNode, state: SerializerState): void {
       break;
 
     case 'orderedList': {
-      closeBlock(state);
+      // Only close block for top-level lists, not nested ones
+      if (state.listIndent === 0) {
+        closeBlock(state);
+      }
       const start = (attrs?.start as number) || 1;
       if (content) {
         content.forEach((item, index) => {
@@ -159,7 +165,10 @@ function processNode(node: ProseMirrorNode, state: SerializerState): void {
     }
 
     case 'taskList':
-      closeBlock(state);
+      // Only close block for top-level lists, not nested ones
+      if (state.listIndent === 0) {
+        closeBlock(state);
+      }
       if (content) {
         for (const item of content) {
           processTaskItem(item, state);
@@ -238,8 +247,9 @@ function processNode(node: ProseMirrorNode, state: SerializerState): void {
     }
 
     case 'taskMarker': {
+      // Don't add trailing space - the following text node will have it
       const markerState = (attrs?.state as string) || 'todo';
-      write(state, markerState.toUpperCase() + ' ');
+      write(state, markerState.toUpperCase());
       break;
     }
 
@@ -303,25 +313,34 @@ function processListItem(node: ProseMirrorNode, state: SerializerState, prefix: 
   state.listIndent++;
   const content = node.content || [];
 
+  let lastChildWasList = false;
   for (let i = 0; i < content.length; i++) {
     const child = content[i];
     if (child.type === 'paragraph') {
       if (child.content) {
         processInlineNodes(child.content, state);
       }
-      if (i < content.length - 1) {
+      // Only add newline if next item is NOT a list (lists handle their own newlines)
+      const nextChild = content[i + 1];
+      if (nextChild && nextChild.type !== 'bulletList' && nextChild.type !== 'orderedList' && nextChild.type !== 'taskList') {
         write(state, '\n');
       }
+      lastChildWasList = false;
     } else if (child.type === 'bulletList' || child.type === 'orderedList' || child.type === 'taskList') {
       write(state, '\n');
       processNode(child, state);
+      lastChildWasList = true;
     } else {
       processNode(child, state);
+      lastChildWasList = false;
     }
   }
 
   state.listIndent--;
-  write(state, '\n');
+  // Don't write newline if last child was a list (it already ended with newlines)
+  if (!lastChildWasList) {
+    write(state, '\n');
+  }
 }
 
 function processTaskItem(node: ProseMirrorNode, state: SerializerState): void {
