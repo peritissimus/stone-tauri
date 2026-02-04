@@ -31,9 +31,11 @@ export const topicAPI = {
   /**
    * Initialize the embedding service
    */
-  initialize: async (): Promise<IpcResponse<EmbeddingStatus>> => {
-    const response = await invokeIpc(TOPIC_COMMANDS.GET_EMBEDDING_STATUS, {});
-    return validateResponse(response, EmbeddingStatusSchema);
+  initialize: async (): Promise<IpcResponse<{ ready: boolean }>> => {
+    console.log('[topicAPI] Calling initialize_embeddings...');
+    const response = await invokeIpc(TOPIC_COMMANDS.INITIALIZE, {});
+    console.log('[topicAPI] initialize_embeddings response:', response);
+    return validateResponse(response, z.object({ ready: z.boolean().optional().default(true) }));
   },
 
   /**

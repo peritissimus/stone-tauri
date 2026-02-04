@@ -51,37 +51,35 @@ impl GitUseCases for GitUseCasesImpl {
             .await?;
 
         // Map GitStatus to GitStatusResponse
-        let staged: Vec<String> = status
+        let staged_count = status
             .changes
             .iter()
             .filter(|c| c.staged)
-            .map(|c| c.path.clone())
-            .collect();
+            .count() as i32;
 
-        let modified: Vec<String> = status
+        let unstaged_count = status
             .changes
             .iter()
-            .filter(|c| c.status == GitFileStatus::Modified)
-            .map(|c| c.path.clone())
-            .collect();
+            .filter(|c| !c.staged && c.status != GitFileStatus::Untracked)
+            .count() as i32;
 
-        let untracked: Vec<String> = status
+        let untracked_count = status
             .changes
             .iter()
             .filter(|c| c.status == GitFileStatus::Untracked)
-            .map(|c| c.path.clone())
-            .collect();
+            .count() as i32;
 
         Ok(GitStatusResponse {
             is_repo: status.is_repo,
             has_changes: status.has_uncommitted_changes,
             branch: status.branch,
-            remote: status.remote_url,
+            has_remote: status.remote_url.is_some(),
+            remote_url: status.remote_url,
             ahead: status.ahead,
             behind: status.behind,
-            staged,
-            modified,
-            untracked,
+            staged: staged_count,
+            unstaged: unstaged_count,
+            untracked: untracked_count,
         })
     }
 

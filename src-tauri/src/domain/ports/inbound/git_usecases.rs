@@ -8,12 +8,13 @@ pub struct GitStatusResponse {
     pub is_repo: bool,
     pub has_changes: bool,
     pub branch: Option<String>,
-    pub remote: Option<String>,
+    pub has_remote: bool,
+    pub remote_url: Option<String>,
     pub ahead: i32,
     pub behind: i32,
-    pub staged: Vec<String>,
-    pub modified: Vec<String>,
-    pub untracked: Vec<String>,
+    pub staged: i32,
+    pub unstaged: i32,
+    pub untracked: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -89,7 +89,7 @@ export const TOPIC_COMMANDS = {
   GET_SIMILAR_NOTES: 'get_similar_notes',
   RECOMPUTE_CENTROIDS: 'classify_all_notes', // Uses classify_all which recomputes
   GET_EMBEDDING_STATUS: 'get_embedding_status',
-  INITIALIZE: 'classify_all_notes', // Same as CLASSIFY_ALL
+  INITIALIZE: 'initialize_embeddings', // Initialize the embedding model
 } as const;
 
 // Search Operations

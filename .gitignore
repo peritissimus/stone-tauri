@@ -99,3 +99,10 @@ coverage/
 # Application specific
 /workspace_*
 /data/
+
+# ML/Embedding model cache
+.fastembed_cache/
+src-tauri/.fastembed_cache/
+
+# Test scripts
+test-*.mjs

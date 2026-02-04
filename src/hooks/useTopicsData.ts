@@ -85,11 +85,21 @@ export function useTopicsData() {
   );
 
   const handleReclassify = useCallback(async () => {
+    console.log('[useTopicsData] handleReclassify called');
+    console.log('[useTopicsData] Step 1: Initializing embedding service...');
     const ready = await initialize();
+    console.log('[useTopicsData] Step 1 result: ready =', ready);
     if (ready) {
-      await reclassifyAllNotes({ excludeJournal });
+      console.log('[useTopicsData] Step 2: Reclassifying all notes...');
+      const result = await reclassifyAllNotes({ excludeJournal });
+      console.log('[useTopicsData] Step 2 result:', result);
+      console.log('[useTopicsData] Step 3: Getting embedding status...');
       await getEmbeddingStatus();
+      console.log('[useTopicsData] Step 4: Loading topics...');
       await loadTopics({ excludeJournal });
+      console.log('[useTopicsData] Reclassify complete!');
+    } else {
+      console.error('[useTopicsData] Initialization failed, skipping reclassify');
     }
   }, [initialize, reclassifyAllNotes, getEmbeddingStatus, loadTopics, excludeJournal]);
 

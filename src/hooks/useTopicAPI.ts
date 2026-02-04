@@ -58,10 +58,13 @@ export function useTopicAPI() {
       console.log('[TopicAPI] Initialize response:', response);
       const result = handleIpcResponse(response, 'Failed to initialize embedding service');
       if (result.success) {
-        console.log('[TopicAPI] Initialize result:', { success: true, ready: result.data.ready });
-        return result.data.ready;
+        console.log('[TopicAPI] Initialize SUCCESS - model loaded');
+        // After initializing, get the status to update the store
+        await getEmbeddingStatus();
+        return true;
       }
       console.log('[TopicAPI] Initialize failed:', result.error);
+      setError(result.error);
       return false;
     } catch (error) {
       console.error('[TopicAPI] Initialize error:', error);
@@ -70,7 +73,7 @@ export function useTopicAPI() {
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setError]);
+  }, [setLoading, setError, getEmbeddingStatus]);
 
   /**
    * Load all topics

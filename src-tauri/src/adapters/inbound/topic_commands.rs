@@ -208,6 +208,14 @@ pub async fn remove_topic_from_note(
         .map_err(|e| e.to_string())
 }
 
-// Note: generate_embeddings command removed - no corresponding use case method
-// Embeddings are generated automatically when notes are created/updated
-// or can be triggered via classify_all_notes
+/// Initialize the embedding service (must be called before classification)
+#[tauri::command]
+pub async fn initialize_embeddings(state: State<'_, AppState>) -> Result<bool, String> {
+    state
+        .topic_usecases
+        .initialize()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(true)
+}

@@ -216,6 +216,7 @@ pub fn run() {
             topic_commands::remove_topic_from_note,
             topic_commands::get_similar_notes,
             topic_commands::get_embedding_status,
+            topic_commands::initialize_embeddings,
             // Search commands
             search_commands::search_notes,
             search_commands::semantic_search,
