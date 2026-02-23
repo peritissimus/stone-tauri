@@ -283,36 +283,33 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
-            // Handle macOS dock icon click when no windows are visible
+            // Handle macOS dock icon click / reopen
             #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = event {
-                if !has_visible_windows {
-                    // Try to show existing main window or create a new one
-                    if let Some(window) = app.get_webview_window("main") {
+            if let tauri::RunEvent::Reopen { .. } = event {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.unminimize();
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                } else {
+                    // Recreate the main window if it was destroyed
+                    if let Ok(window) = tauri::WebviewWindowBuilder::new(
+                        app,
+                        "main",
+                        tauri::WebviewUrl::App("index.html".into()),
+                    )
+                    .title("Stone")
+                    .inner_size(800.0, 600.0)
+                    .transparent(true)
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .build()
+                    {
+                        let _ = window.set_effects(
+                            EffectsBuilder::new()
+                                .effects([Effect::UnderWindowBackground])
+                                .build(),
+                        );
                         let _ = window.show();
                         let _ = window.set_focus();
-                    } else {
-                        // Recreate the main window if it was destroyed
-                        if let Ok(window) = tauri::WebviewWindowBuilder::new(
-                            app,
-                            "main",
-                            tauri::WebviewUrl::App("index.html".into()),
-                        )
-                        .title("Stone")
-                        .inner_size(800.0, 600.0)
-                        .transparent(true)
-                        .title_bar_style(tauri::TitleBarStyle::Overlay)
-                        .build()
-                        {
-                            // Apply the same window effects as in setup_app
-                            let _ = window.set_effects(
-                                EffectsBuilder::new()
-                                    .effects([Effect::UnderWindowBackground])
-                                    .build(),
-                            );
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
                     }
                 }
             }
