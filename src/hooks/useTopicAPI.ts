@@ -47,6 +47,31 @@ export function useTopicAPI() {
     useTopicStore();
 
   /**
+   * Get embedding status
+   */
+  const getEmbeddingStatus = useCallback(async () => {
+    console.log('[TopicAPI] Getting embedding status...');
+    setError(null);
+    try {
+      const response = await topicAPI.getEmbeddingStatus();
+      console.log('[TopicAPI] Embedding status response:', response);
+      const result = handleIpcResponse(response, 'Failed to get embedding status');
+      if (result.success) {
+        console.log('[TopicAPI] Embedding status:', result.data);
+        setEmbeddingStatus(result.data);
+        return result.data;
+      }
+      console.error('[TopicAPI] Embedding status error:', result.error);
+      setError(result.error);
+      return null;
+    } catch (error) {
+      console.error('[TopicAPI] Embedding status exception:', error);
+      setError(error instanceof Error ? error.message : 'Failed to get embedding status');
+      return null;
+    }
+  }, [setEmbeddingStatus, setError]);
+
+  /**
    * Initialize the embedding service
    */
   const initialize = useCallback(async () => {
@@ -297,31 +322,6 @@ export function useTopicAPI() {
     },
     [setError],
   );
-
-  /**
-   * Get embedding status
-   */
-  const getEmbeddingStatus = useCallback(async () => {
-    console.log('[TopicAPI] Getting embedding status...');
-    setError(null);
-    try {
-      const response = await topicAPI.getEmbeddingStatus();
-      console.log('[TopicAPI] Embedding status response:', response);
-      const result = handleIpcResponse(response, 'Failed to get embedding status');
-      if (result.success) {
-        console.log('[TopicAPI] Embedding status:', result.data);
-        setEmbeddingStatus(result.data);
-        return result.data;
-      }
-      console.error('[TopicAPI] Embedding status error:', result.error);
-      setError(result.error);
-      return null;
-    } catch (error) {
-      console.error('[TopicAPI] Embedding status exception:', error);
-      setError(error instanceof Error ? error.message : 'Failed to get embedding status');
-      return null;
-    }
-  }, [setEmbeddingStatus, setError]);
 
   /**
    * Recompute all topic centroids
