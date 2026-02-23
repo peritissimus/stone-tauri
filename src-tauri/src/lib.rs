@@ -34,12 +34,42 @@ use adapters::inbound::{
 
 /// Initialize the application
 async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into()),
-        )
-        .init();
+    // Set up logging: always write to daily-rotated log files,
+    // and also write to stderr in dev builds.
+    let paths = AppPaths::new()?;
+    paths.ensure_directories()?;
+
+    let file_appender = tracing_appender::rolling::daily(&paths.logs_dir, "stone.log");
+
+    let env_filter = tracing_subscriber::EnvFilter::from_default_env()
+        .add_directive(tracing::Level::INFO.into());
+
+    #[cfg(debug_assertions)]
+    {
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::util::SubscriberInitExt;
+
+        let file_layer = tracing_subscriber::fmt::layer()
+            .with_ansi(false)
+            .with_writer(file_appender);
+        let stderr_layer = tracing_subscriber::fmt::layer()
+            .with_writer(std::io::stderr);
+
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(file_layer)
+            .with(stderr_layer)
+            .init();
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .with_ansi(false)
+            .with_writer(file_appender)
+            .init();
+    }
 
     tracing::info!("Starting Stone application...");
 

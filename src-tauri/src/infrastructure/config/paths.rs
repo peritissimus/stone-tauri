@@ -28,6 +28,9 @@ pub struct AppPaths {
 
     /// Backups directory
     pub backups_dir: PathBuf,
+
+    /// Logs directory
+    pub logs_dir: PathBuf,
 }
 
 impl AppPaths {
@@ -42,6 +45,7 @@ impl AppPaths {
         let temp_dir = app_data_dir.join("temp");
         let search_index_dir = app_data_dir.join("search_index");
         let backups_dir = app_data_dir.join("backups");
+        let logs_dir = app_data_dir.join("logs");
 
         Ok(Self {
             app_data_dir,
@@ -51,6 +55,7 @@ impl AppPaths {
             temp_dir,
             search_index_dir,
             backups_dir,
+            logs_dir,
         })
     }
 
@@ -62,6 +67,7 @@ impl AppPaths {
         let temp_dir = base_dir.join("temp");
         let search_index_dir = base_dir.join("search_index");
         let backups_dir = base_dir.join("backups");
+        let logs_dir = base_dir.join("logs");
 
         Self {
             app_data_dir: base_dir,
@@ -71,6 +77,7 @@ impl AppPaths {
             temp_dir,
             search_index_dir,
             backups_dir,
+            logs_dir,
         }
     }
 
@@ -83,6 +90,7 @@ impl AppPaths {
             &self.temp_dir,
             &self.search_index_dir,
             &self.backups_dir,
+            &self.logs_dir,
         ];
 
         for dir in dirs {
