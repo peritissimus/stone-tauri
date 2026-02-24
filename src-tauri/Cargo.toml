@@ -1,6 +1,6 @@
 [package]
 name = "stone"
-version = "0.2.29"
+version = "0.2.30"
 description = "Production-ready note-taking desktop application"
 authors = ["Stone Team"]
 edition = "2021"
