@@ -15,6 +15,7 @@ import { useDocumentBuffer } from '@/hooks/useDocumentBuffer';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useEditorMode } from '@/hooks/useEditorMode';
 import { useNoteExport } from '@/hooks/useNoteExport';
+import { useUIStore } from '@/stores/uiStore';
 import {
   NoteEditorHeader,
   NoteEditorEmptyState,
@@ -199,6 +200,23 @@ export const NoteEditor = forwardRef<NoteEditorHandle>((_, ref) => {
       }
     };
   }, []);
+
+  // Restore editor focus when overlays close
+  const anyOverlayOpen = useUIStore(
+    (s) => s.commandCenterOpen || s.findReplaceOpen,
+  );
+  const prevOverlayOpen = useRef(false);
+
+  useEffect(() => {
+    if (prevOverlayOpen.current && !anyOverlayOpen) {
+      requestAnimationFrame(() => {
+        if (editor && !editor.isDestroyed) {
+          editor.commands.focus();
+        }
+      });
+    }
+    prevOverlayOpen.current = anyOverlayOpen;
+  }, [anyOverlayOpen, editor]);
 
   // Handle note link clicks
   useEffect(() => {

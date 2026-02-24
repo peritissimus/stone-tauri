@@ -49,11 +49,20 @@ export function useDocumentBuffer({
     if (!noteId || !editor) return;
 
     const loadContent = async () => {
+      const focusEditor = () => {
+        requestAnimationFrame(() => {
+          if (!editor.isDestroyed) {
+            editor.commands.focus('start');
+          }
+        });
+      };
+
       // Check if already in buffer
       const existingBuffer = getBuffer(noteId);
       if (existingBuffer) {
         logger.debug('[useDocumentBuffer] Loading from buffer:', noteId);
         editor.commands.setContent(existingBuffer.content);
+        focusEditor();
         return;
       }
 
@@ -67,17 +76,16 @@ export function useDocumentBuffer({
         const response = await noteAPI.getContent(noteId);
 
         if (response.success && response.data) {
-          // Backend returns raw markdown - parse it directly to ProseMirror JSON
           const markdownContent = response.data.content;
           const docJson = parseMarkdown(markdownContent, editor.schema);
-          // Set content in editor using parsed JSON
           editor.commands.setContent(docJson);
-          // Cache the parsed JSON in buffer
           setBuffer(noteId, docJson);
         } else {
           editor.commands.setContent('');
           setBuffer(noteId, { type: 'doc', content: [] });
         }
+
+        focusEditor();
       } catch (error) {
         logger.error('[useDocumentBuffer] Failed to load content:', error);
         editor.commands.setContent('');

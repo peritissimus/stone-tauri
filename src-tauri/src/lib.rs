@@ -97,12 +97,9 @@ async fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
             }
         })?;
 
-    // Load configuration
+    // Load configuration (paths already ensured above for logging)
     tracing::info!("Loading configuration...");
     let config = AppConfig::load()?;
-
-    // Ensure directories exist
-    config.paths.ensure_directories()?;
 
     // Initialize database manager
     tracing::info!("Initializing database...");

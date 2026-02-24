@@ -1,7 +1,7 @@
 /**
  * Note Editor Content Component
  */
-import { forwardRef } from 'react';
+import { forwardRef, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { EditorContent } from '@tiptap/react';
 import { Skeleton } from '@/components/base/ui/skeleton';
@@ -37,8 +37,24 @@ export const NoteEditorContent = forwardRef<HTMLDivElement, NoteEditorContentPro
   function NoteEditorContent({ editor, isLoading }, ref) {
     const { showBlockIndicators } = useEditorUI();
 
+    // Click on the padding/empty area around the editor should focus it at the end
+    const handleContainerClick = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!editor || editor.isDestroyed) return;
+        // Only handle clicks on the container itself, not on the editor content
+        const target = e.target as HTMLElement;
+        if (target.closest('.ProseMirror')) return;
+        editor.commands.focus('end');
+      },
+      [editor],
+    );
+
     return (
-      <div ref={ref} className="flex-1 min-h-0 overflow-y-auto bg-background relative">
+      <div
+        ref={ref}
+        className={`flex-1 min-h-0 overflow-y-auto bg-background relative ${!isLoading ? 'cursor-text' : ''}`}
+        onClick={handleContainerClick}
+      >
         {isLoading ? (
           <EditorSkeleton />
         ) : (
