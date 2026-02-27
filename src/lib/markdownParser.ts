@@ -300,6 +300,7 @@ const defaultTokens: Record<string, TokenSpec> = {
  */
 export function parseMarkdown(markdown: string, _schema?: unknown): JSONContent {
   const tokens = md.parse(markdown, {});
+
   const doc: JSONContent = { type: 'doc', content: [] };
   const stack: JSONContent[] = [doc];
   const markStack: { type: string; attrs?: Record<string, unknown> }[] = [];
@@ -372,6 +373,15 @@ export function parseMarkdown(markdown: string, _schema?: unknown): JSONContent 
       if (token.type === 'text') {
         addText(token.content);
       } else if (token.type === 'inline' && token.children) {
+        // Check if we're inside a table cell - table cells MUST have paragraphs wrapping inline content
+        const currentBlock = top();
+        const isTableCell = currentBlock.type === 'tableCell' || currentBlock.type === 'tableHeader';
+
+        if (isTableCell) {
+          // Wrap inline content in a paragraph for table cells
+          openBlock('paragraph');
+        }
+
         // Process inline children
         for (const child of token.children) {
           const childSpec = defaultTokens[child.type];
@@ -393,6 +403,11 @@ export function parseMarkdown(markdown: string, _schema?: unknown): JSONContent 
           } else if (child.type === 'text') {
             addText(child.content);
           }
+        }
+
+        if (isTableCell) {
+          // Close the paragraph wrapper for table cells
+          closeBlock();
         }
       }
       continue;

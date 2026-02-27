@@ -146,6 +146,7 @@ export function FloatingBlockMenu({ editor }: FloatingBlockMenuProps) {
           isDragging ? 'cursor-grabbing bg-accent' : 'cursor-grab',
         )}
         draggable={true}
+        data-drag-handle="true"
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         title="Drag to move"

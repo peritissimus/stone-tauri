@@ -25,6 +25,7 @@ import { TaskMarker } from '@/extensions/TaskMarker';
 import { Note } from '@/types';
 import { IndentableBlock } from '@/extensions/IndentableBlock';
 import { SearchAndReplace } from '@/extensions/SearchAndReplace';
+import { MarkdownPaste } from '@/extensions/MarkdownPaste';
 import { logger } from '@/utils/logger';
 import { noteAPI } from '@/api';
 
@@ -250,6 +251,7 @@ export function useTipTapEditor() {
         highlightClass: 'search-highlight',
         activeHighlightClass: 'search-highlight-active',
       }),
+      MarkdownPaste,
     ],
     content: '',
     editorProps: {
