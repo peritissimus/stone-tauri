@@ -50,7 +50,6 @@ function isInLastCell(state: any): boolean {
   const lastCell = lastRowCells[lastRowCells.length - 1];
 
   // Check if cursor's cell is the last cell
-  let cellDepth = -1;
   for (let d = $from.depth; d > 0; d--) {
     const node = $from.node(d);
     if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
@@ -198,7 +197,7 @@ export const TableNavigation = Extension.create({
         key: new PluginKey('tableNavigation'),
         props: {
           // Optional: Add visual feedback when in table
-          decorations(state) {
+          decorations(_state) {
             // Could add decorations here if needed
             return null;
           },

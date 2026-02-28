@@ -20,7 +20,7 @@ export const MarkdownPaste = Extension.create({
       new Plugin({
         key: new PluginKey('markdownPaste'),
         props: {
-          handlePaste: (view, event, slice) => {
+          handlePaste: (view, event, _slice) => {
             // Only handle plain text paste (not rich text from other editors)
             const text = event.clipboardData?.getData('text/plain');
 

@@ -34,8 +34,17 @@ export function CreateWorkspaceModal({
   useEffect(() => {
     if (isOpen) {
       setName('');
-      setFolderPath('');
       setError(null);
+      // Default to iCloud Drive path
+      workspaceAPI.getICloudPath().then((result) => {
+        if (result.success && result.data?.path) {
+          setFolderPath(result.data.path);
+        } else {
+          setFolderPath('');
+        }
+      }).catch(() => {
+        setFolderPath('');
+      });
     }
   }, [isOpen]);
 
