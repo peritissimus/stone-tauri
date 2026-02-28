@@ -84,6 +84,14 @@ pub struct GetActiveWorkspaceResponse {
     pub workspace: Option<Workspace>,
 }
 
+/// Response for get_icloud_path
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetICloudPathResponse {
+    pub path: Option<String>,
+    pub exists: bool,
+}
+
 /// Get active workspace
 #[tauri::command]
 pub async fn get_active_workspace(
@@ -249,6 +257,37 @@ pub async fn move_folder(
         .move_folder(request)
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Get iCloud Drive path for Stone
+/// Returns the standard iCloud Drive location with a Stone folder
+#[tauri::command]
+pub async fn get_icloud_path() -> Result<GetICloudPathResponse, String> {
+    use std::path::PathBuf;
+
+    // Get home directory
+    let home = std::env::var("HOME").map_err(|e| format!("Failed to get HOME: {}", e))?;
+
+    // Construct iCloud Drive path
+    let icloud_base = PathBuf::from(&home)
+        .join("Library")
+        .join("Mobile Documents")
+        .join("com~apple~CloudDocs");
+
+    if !icloud_base.exists() {
+        return Ok(GetICloudPathResponse {
+            path: None,
+            exists: false,
+        });
+    }
+
+    // Create Stone subfolder path
+    let stone_path = icloud_base.join("Stone");
+
+    Ok(GetICloudPathResponse {
+        path: Some(stone_path.to_string_lossy().to_string()),
+        exists: stone_path.exists(),
+    })
 }
 
 // Commands are exported individually and registered in lib.rs

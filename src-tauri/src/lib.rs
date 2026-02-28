@@ -213,6 +213,7 @@ pub fn run() {
             workspace_commands::delete_workspace,
             workspace_commands::scan_workspace,
             workspace_commands::sync_workspace,
+            workspace_commands::get_icloud_path,
             // Notebook commands
             notebook_commands::create_notebook,
             notebook_commands::get_notebook,

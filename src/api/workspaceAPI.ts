@@ -254,5 +254,17 @@ export const workspaceAPI = {
       z.object({ canceled: z.boolean().optional(), folderPath: z.string().optional() }),
     );
   },
+
+  /**
+   * Get iCloud Drive path for Stone
+   * Returns the standard iCloud Drive location with a Stone folder
+   */
+  getICloudPath: async (): Promise<IpcResponse<{ path?: string; exists: boolean }>> => {
+    const response = await invokeIpc(WORKSPACE_COMMANDS.GET_ICLOUD_PATH, {});
+    return validateResponse(
+      response,
+      z.object({ path: z.string().optional(), exists: z.boolean() }),
+    );
+  },
 };
 

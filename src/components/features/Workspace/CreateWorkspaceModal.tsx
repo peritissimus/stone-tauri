@@ -11,6 +11,7 @@ import { Button } from '@/components/base/ui/button';
 import { ContainerStack, ContainerFlex } from '@/components/base/ui';
 import { Label, Text } from '@/components/base/ui/text';
 import { useWorkspaceAPI } from '@/hooks/useWorkspaceAPI';
+import { workspaceAPI } from '@/api/workspaceAPI';
 
 interface CreateWorkspaceModalProps {
   isOpen: boolean;
@@ -112,6 +113,33 @@ export function CreateWorkspaceModal({
                   disabled={isSubmitting}
                 >
                   Browse…
+                </Button>
+              </ContainerFlex>
+              <ContainerFlex gap="xs" className="mt-1">
+                <Text size="xs" variant="muted">
+                  Quick:
+                </Text>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
+                  onClick={async () => {
+                    try {
+                      const result = await workspaceAPI.getICloudPath();
+                      if (result.success && result.data?.path) {
+                        setFolderPath(result.data.path);
+                        setError(null);
+                      } else {
+                        setError('iCloud Drive not found. Make sure iCloud is enabled on your Mac.');
+                      }
+                    } catch (e) {
+                      setError('Failed to get iCloud Drive path');
+                    }
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Use iCloud Drive
                 </Button>
               </ContainerFlex>
               <Text size="xs" variant="muted">

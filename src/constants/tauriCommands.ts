@@ -22,6 +22,7 @@ export const WORKSPACE_COMMANDS = {
   MOVE_FOLDER: 'move_folder',
   VALIDATE_PATH: 'validate_path',
   SELECT_FOLDER: 'select_folder',
+  GET_ICLOUD_PATH: 'get_icloud_path',
 } as const;
 
 // Note Operations
