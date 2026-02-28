@@ -26,6 +26,7 @@ import { Note } from '@/types';
 import { IndentableBlock } from '@/extensions/IndentableBlock';
 import { SearchAndReplace } from '@/extensions/SearchAndReplace';
 import { MarkdownPaste } from '@/extensions/MarkdownPaste';
+import { TableNavigation } from '@/extensions/TableNavigation';
 import { logger } from '@/utils/logger';
 import { noteAPI } from '@/api';
 
@@ -252,6 +253,7 @@ export function useTipTapEditor() {
         activeHighlightClass: 'search-highlight-active',
       }),
       MarkdownPaste,
+      TableNavigation,
     ],
     content: '',
     editorProps: {
