@@ -4,15 +4,14 @@
  * Optimized for speed: closes immediately on submit, save happens in background
  */
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useQuickCaptureAPI } from "@/hooks/useQuickCaptureAPI";
-import { quickCaptureAPI } from "@/api/quickCaptureAPI";
 
 const DRAFT_KEY = "quick-capture-draft";
 
 export function QuickCaptureWindow() {
-  const { appendToJournal } = useQuickCaptureAPI();
+  const { appendToJournal, hide, getState } = useQuickCaptureAPI();
   const [text, setText] = useState(() => {
     // Restore draft on mount
     return localStorage.getItem(DRAFT_KEY) || "";
@@ -47,7 +46,7 @@ export function QuickCaptureWindow() {
     };
   }, []);
 
-  const closeWindow = async () => {
+  const closeWindow = useCallback(async () => {
     // Only close if we're visible (tracked from backend events)
     if (!isVisibleRef.current) {
       return;
@@ -57,17 +56,17 @@ export function QuickCaptureWindow() {
     isVisibleRef.current = false;
 
     try {
-      await quickCaptureAPI.hide();
+      await hide();
     } catch {
       // Ignore errors - window will be hidden regardless
     }
-  };
+  }, [hide]);
 
   // Check initial state from backend on mount
   useEffect(() => {
     const checkInitialState = async () => {
       try {
-        const response = await quickCaptureAPI.getState();
+        const response = await getState();
         const backendState = response.data;
         if (backendState === "Visible") {
           isVisibleRef.current = true;
@@ -78,7 +77,7 @@ export function QuickCaptureWindow() {
       }
     };
     checkInitialState();
-  }, []);
+  }, [getState]);
 
   // Single unified keyboard handler with capture phase for reliability
   useEffect(() => {
@@ -117,7 +116,7 @@ export function QuickCaptureWindow() {
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     return () =>
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [text, appendToJournal]);
+  }, [text, appendToJournal, closeWindow]);
 
   // Save draft on text change (debounced naturally by React state)
   useEffect(() => {

@@ -39,7 +39,7 @@ export function useDocumentBuffer({
   editor,
 }: UseDocumentBufferOptions): UseDocumentBufferResult {
   const { updateNote } = useNoteAPI();
-  const { getBuffer, setBuffer, updateBuffer, markClean, isDirty, getDirtyBuffers, hasBuffer } =
+  const { getBuffer, setBuffer, updateBuffer, markClean, isDirty, getDirtyBuffers, hasBuffer, removeBuffer } =
     useDocumentBufferStore();
 
   const isLoadingRef = useRef(false);
@@ -133,7 +133,6 @@ export function useDocumentBuffer({
     reloadTimerRef.current = setTimeout(async () => {
       if (loadingNotes.has(noteId)) return;
 
-      const { removeBuffer } = useDocumentBufferStore.getState();
       removeBuffer(noteId);
 
       loadingNotes.add(noteId);
@@ -152,7 +151,7 @@ export function useDocumentBuffer({
         loadingNotes.delete(noteId);
       }
     }, 100); // 100ms debounce
-  }, [noteId, editor, setBuffer]);
+  }, [noteId, editor, setBuffer, removeBuffer]);
 
   // Cleanup reload timer on unmount
   useEffect(() => {
@@ -278,7 +277,7 @@ export function useDocumentBuffer({
  * unnecessary writes while user is actively editing.
  */
 export function useDocumentAutosave(intervalMs: number = 30000) {
-  const { getDirtyBuffers, markClean } = useDocumentBufferStore();
+  const { getDirtyBuffers, markClean, getBuffer } = useDocumentBufferStore();
   const { updateNote } = useNoteAPI();
 
   const saveAllDirty = useCallback(async () => {
@@ -304,7 +303,7 @@ export function useDocumentAutosave(intervalMs: number = 30000) {
 
   // Save a specific note (used when switching notes)
   const saveNote = useCallback(async (noteId: string) => {
-    const buffer = useDocumentBufferStore.getState().getBuffer(noteId);
+    const buffer = getBuffer(noteId);
     if (!buffer || !buffer.isDirty) return;
 
     logger.debug('[useDocumentAutosave] Saving note on switch:', noteId);
@@ -318,7 +317,7 @@ export function useDocumentAutosave(intervalMs: number = 30000) {
     } catch (error) {
       logger.error('[useDocumentAutosave] Failed to save on switch:', noteId, error);
     }
-  }, [updateNote, markClean]);
+  }, [getBuffer, updateNote, markClean]);
 
   // Save on window blur
   useEffect(() => {

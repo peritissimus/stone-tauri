@@ -15,6 +15,7 @@ import { useDocumentBuffer } from '@/hooks/useDocumentBuffer';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useEditorMode } from '@/hooks/useEditorMode';
 import { useNoteExport } from '@/hooks/useNoteExport';
+import { useAutosave } from '@/hooks/useAutosave';
 import { useUIStore } from '@/stores/uiStore';
 import {
   NoteEditorHeader,
@@ -55,7 +56,16 @@ export const NoteEditor = forwardRef<NoteEditorHandle>((_, ref) => {
 
   const editor = useTipTapEditor();
   const creatingNoteRef = useRef(false);
-  const titleSaveTimeoutRef = useRef<number | null>(null);
+
+  // Autosave hook for title changes
+  const { saveDebounced: saveTitleDebounced } = useAutosave<{ title: string }>({
+    saveFn: async (data) => {
+      if (activeNoteId) {
+        await updateNote(activeNoteId, data, false);
+      }
+    },
+    delay: 500,
+  });
 
   // Document buffer for content management
   const { isDirty, save } = useDocumentBuffer({
@@ -172,34 +182,14 @@ export const NoteEditor = forwardRef<NoteEditorHandle>((_, ref) => {
 
   // Title change with debounced save
   const handleTitleChange = useCallback(
-    async (newTitle: string) => {
+    (newTitle: string) => {
       setTitle(newTitle);
       if (!activeNoteId) return;
 
-      if (titleSaveTimeoutRef.current) {
-        clearTimeout(titleSaveTimeoutRef.current);
-      }
-
-      titleSaveTimeoutRef.current = window.setTimeout(async () => {
-        titleSaveTimeoutRef.current = null;
-        try {
-          await updateNote(activeNoteId, { title: newTitle }, false);
-        } catch (error) {
-          logger.error('Title autosave failed:', error);
-        }
-      }, 500);
+      saveTitleDebounced({ title: newTitle });
     },
-    [activeNoteId, updateNote],
+    [activeNoteId, saveTitleDebounced],
   );
-
-  // Cleanup title save timeout
-  useEffect(() => {
-    return () => {
-      if (titleSaveTimeoutRef.current) {
-        clearTimeout(titleSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Restore editor focus when overlays close
   const anyOverlayOpen = useUIStore(

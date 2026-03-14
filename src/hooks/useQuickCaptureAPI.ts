@@ -53,8 +53,33 @@ export function useQuickCaptureAPI() {
     [isSubmitting],
   );
 
+  const hide = useCallback(async () => {
+    try {
+      const response = await quickCaptureAPI.hide();
+      if (!response.success) {
+        logger.warn('[useQuickCaptureAPI] Failed to hide window:', response.error?.message);
+      }
+      return response;
+    } catch (err) {
+      logger.error('[useQuickCaptureAPI] Error hiding window:', err);
+      throw err;
+    }
+  }, []);
+
+  const getState = useCallback(async () => {
+    try {
+      const response = await quickCaptureAPI.getState();
+      return response;
+    } catch (err) {
+      logger.error('[useQuickCaptureAPI] Error getting state:', err);
+      throw err;
+    }
+  }, []);
+
   return {
     appendToJournal,
+    hide,
+    getState,
     isSubmitting,
     error,
   };
