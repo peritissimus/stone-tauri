@@ -8,6 +8,7 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Slice, Fragment } from '@tiptap/pm/model';
+import { TextSelection } from '@tiptap/pm/state';
 import { logger } from '@/utils/logger';
 
 // Store drag state globally
@@ -71,7 +72,7 @@ export const BlockDragDrop = Extension.create({
               event.dataTransfer!.setData('text/plain', ''); // Required for Firefox
 
               // Add drag image (optional - browser will use default)
-              if (event.dataTransfer!.setDragImage) {
+              if (typeof event.dataTransfer!.setDragImage === 'function') {
                 const blockDom = view.nodeDOM(blockPos);
                 if (blockDom instanceof HTMLElement) {
                   event.dataTransfer!.setDragImage(blockDom, 0, 0);
@@ -81,7 +82,7 @@ export const BlockDragDrop = Extension.create({
               return true;
             },
 
-            dragover(view, event) {
+            dragover(_view, event) {
               // Must prevent default to allow drop
               if (draggedNodePos !== null) {
                 event.preventDefault();
@@ -174,7 +175,7 @@ export const BlockDragDrop = Extension.create({
 
               // Set selection to the moved block
               const newPos = adjustedTargetPos + 1; // Inside the moved block
-              tr.setSelection(view.state.selection.constructor.near(tr.doc.resolve(newPos)));
+              tr.setSelection(TextSelection.near(tr.doc.resolve(newPos)));
 
               // Dispatch transaction
               view.dispatch(tr);
