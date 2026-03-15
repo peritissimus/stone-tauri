@@ -4,7 +4,7 @@
  * Implements: specs/components.ts#CommandItemRowProps
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { ArrowRight } from 'phosphor-react';
 
 export interface CommandItem {
@@ -26,7 +26,7 @@ export interface CommandItemRowProps {
   onMouseEnter: () => void;
 }
 
-export function CommandItemRow({
+export const CommandItemRow = memo(function CommandItemRow({
   item,
   index,
   isSelected,
@@ -77,4 +77,4 @@ export function CommandItemRow({
       )}
     </button>
   );
-}
+});

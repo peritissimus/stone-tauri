@@ -4,7 +4,7 @@
  * Implements: specs/components.ts#FolderItemProps
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button } from '@/components/base/ui/button';
 import { Text } from '@/components/base/ui/text';
 import { TreeItem } from '@/components/composites';
@@ -23,7 +23,7 @@ export interface NoteListFolderItemProps {
   children?: React.ReactNode;
 }
 
-export function NoteListFolderItem({
+export const NoteListFolderItem = memo(function NoteListFolderItem({
   node,
   level,
   isActive,
@@ -68,4 +68,4 @@ export function NoteListFolderItem({
       {isExpanded && children && <div>{children}</div>}
     </div>
   );
-}
+});

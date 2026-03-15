@@ -2,7 +2,7 @@
  * TaskSection - Collapsible section for tasks grouped by state
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { CaretRight } from 'phosphor-react';
 import { TodoItem } from '@/types';
 import { TaskItem } from './TaskItem';
@@ -31,7 +31,7 @@ const STATE_COLORS: Record<string, string> = {
   all: 'bg-foreground/5 text-foreground',
 };
 
-export function TaskSection({
+export const TaskSection = memo(function TaskSection({
   state,
   label,
   todos,
@@ -75,4 +75,4 @@ export function TaskSection({
       )}
     </div>
   );
-}
+});

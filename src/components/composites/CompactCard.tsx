@@ -28,7 +28,7 @@ export interface CompactCardProps extends Omit<React.HTMLAttributes<HTMLDivEleme
  *   Preview content
  * </CompactCard>
  */
-export const CompactCard = React.forwardRef<HTMLDivElement, CompactCardProps>(
+export const CompactCard = React.memo(React.forwardRef<HTMLDivElement, CompactCardProps>(
   ({ size = 'normal', title, isActive = false, children, className, ...props }, ref) => {
     const padding = size === 'compact' ? 'p-1.5' : size === 'spacious' ? 'p-3' : 'p-2';
     const textSize = sizeTextClasses[size];
@@ -54,5 +54,5 @@ export const CompactCard = React.forwardRef<HTMLDivElement, CompactCardProps>(
       </div>
     );
   },
-);
+));
 CompactCard.displayName = 'CompactCard';
